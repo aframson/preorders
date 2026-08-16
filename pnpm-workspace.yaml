@@ -1,5 +1,7 @@
-# Dependencies allowed to run install scripts. Both belong to the Trigger.dev
-# CLI: esbuild fetches its platform binary and @depot/cli its build client.
+# Dependencies allowed to run install scripts (pnpm 10+ blocks them by default).
+# Without these, Vercel fails with ERR_PNPM_IGNORED_BUILDS.
 allowBuilds:
   '@depot/cli': true
   esbuild: true
+  sharp: true
+  unrs-resolver: true
