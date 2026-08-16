@@ -1,8 +1,11 @@
 import {
+  CheckCheck,
   ChevronLeft,
+  Mic,
   MoreVertical,
   Paperclip,
   Phone,
+  Signal,
   Smile,
   Video,
 } from "lucide-react";
@@ -99,7 +102,7 @@ export function WhatsAppUnfurl({ className }: { className?: string }) {
             <Paperclip className="size-5 shrink-0 -rotate-45 text-[#54656f]" strokeWidth={1.75} />
           </div>
           <div className="relative flex size-[46px] shrink-0 items-center justify-center rounded-full bg-[#008069] text-white shadow-sm">
-            <MicIcon />
+            <Mic className="size-5" strokeWidth={2} aria-hidden />
           </div>
         </div>
     </GrainShell>
@@ -229,30 +232,6 @@ function Tail({ side }: { side: "in" | "out" }) {
 
 function BlueTicks() {
   return (
-    <svg viewBox="0 0 16 11" className="size-3.5 text-[#53bdeb]" aria-hidden>
-      <path
-        fill="currentColor"
-        d="M11.07 1.14 5.2 7.9 2.9 5.7l-.9.86 3.2 3.3 6.8-7.86-.93-.86Zm3.06 0-5.87 6.76-.7-.7.86-.93 5.01-5.99.7.86Z"
-      />
-    </svg>
-  );
-}
-
-function Signal() {
-  return (
-    <svg viewBox="0 0 16 12" className="h-3 w-4 fill-white" aria-hidden>
-      <rect x="0" y="8" width="3" height="4" rx="0.5" />
-      <rect x="4.3" y="5.5" width="3" height="6.5" rx="0.5" />
-      <rect x="8.6" y="3" width="3" height="9" rx="0.5" />
-      <rect x="12.9" y="0.5" width="3" height="11.5" rx="0.5" />
-    </svg>
-  );
-}
-
-function MicIcon() {
-  return (
-    <svg viewBox="0 0 24 24" className="relative size-5 fill-white" aria-hidden>
-      <path d="M12 14a3 3 0 0 0 3-3V6a3 3 0 1 0-6 0v5a3 3 0 0 0 3 3Zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.93V21h2v-3.07A7 7 0 0 0 19 11h-2Z" />
-    </svg>
+    <CheckCheck className="size-3.5 text-[#53bdeb]" strokeWidth={2.5} aria-hidden />
   );
 }

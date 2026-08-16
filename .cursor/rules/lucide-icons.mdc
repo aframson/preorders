@@ -1,0 +1,14 @@
+---
+description: Use Lucide React for all UI icons
+alwaysApply: true
+---
+
+# Icons
+
+Use **`lucide-react`** for every UI icon in this app.
+
+- Import named icons from `lucide-react` (e.g. `import { Hourglass } from "lucide-react"`).
+- Prefer consistent sizing: `size-4` / `size-5` in dense UI, larger only for empty states.
+- Pass `aria-hidden` on decorative icons; do not invent custom SVG icons for UI chrome.
+- Exceptions: the brand `Logo` mark, and non-icon graphics (charts, countdown rings, WhatsApp bubble tails, OG/canvas art).
+- Do not add other icon packs (`react-icons`, Heroicons, Phosphor, inline emoji-as-icon, etc.).
