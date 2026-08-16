@@ -1,18 +1,17 @@
-import { ArrowDownLeft, ArrowUpRight, Wallet } from "lucide-react";
+import { Wallet } from "lucide-react";
 import Link from "next/link";
 
 import { PageHeader } from "@/components/dashboard/page-header";
 import { ButtonLink } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { StatusPill } from "@/components/ui/status-pill";
-import { cn } from "@/lib/cn";
 import { requireVendor } from "@/lib/auth";
 import { PLATFORM_FEE_PERCENT } from "@/lib/fees";
 import { formatGhs } from "@/lib/money";
 import { isPaystackConfigured, paystackMode } from "@/lib/paystack";
 import {
   getVendorMoney,
-  type VendorTransaction,
+  type VendorSettlement,
 } from "@/lib/queries/money";
 import { ORDER_STATUS } from "@/lib/status";
 import { createClient } from "@/lib/supabase/server";
@@ -20,16 +19,8 @@ import { formatAccraDateTime } from "@/lib/time";
 
 export const metadata = { title: "Money" };
 
-export default async function MoneyPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ tab?: string }>;
-}) {
+export default async function MoneyPage() {
   const vendor = await requireVendor();
-  const query = await searchParams;
-  const tab =
-    query.tab === "outbound" || query.tab === "inbound" ? query.tab : "all";
-
   const money = await getVendorMoney(vendor.id);
   const supabase = await createClient();
 
@@ -61,27 +52,49 @@ export default async function MoneyPage({
 
   const paystackReady = isPaystackConfigured();
   const mode = paystackMode();
-
-  const visible =
-    tab === "all"
-      ? money.transactions
-      : money.transactions.filter((row) => row.direction === tab);
+  const payoutReady = Boolean(vendor.payoutVerifiedAt);
+  const channel =
+    vendor.payoutChannel === "bank" ? "bank account" : "mobile money";
 
   return (
     <div className="max-w-3xl space-y-6">
       <PageHeader
         title="Money"
-        description="Inbound customer payments, outbound platform fees, and every order transaction."
+        description="What customers paid, what you keep, and when Paystack pays you out. There is no wallet inside Preorders."
       />
 
-      <p className="text-sm text-ink-muted">
-        <Link
-          href="/dashboard/earnings"
-          className="font-medium text-brand-700 underline-offset-2 hover:underline"
-        >
-          Earnings & how to cash out →
-        </Link>
-      </p>
+      <section className="space-y-3 rounded-card border border-border bg-surface p-5">
+        <h2 className="font-display text-base font-semibold text-ink">
+          How you get paid
+        </h2>
+        <ul className="space-y-2 text-sm text-ink-muted">
+          <li>
+            Customer pays → Paystack holds the money briefly → your share goes
+            to your connected {channel}.
+          </li>
+          <li>
+            On goods we keep{" "}
+            <span className="font-medium text-ink">
+              {PLATFORM_FEE_PERCENT.goods}%
+            </span>
+            . Shipping is 100% yours.
+          </li>
+          <li>
+            Ghana payouts are{" "}
+            <span className="font-medium text-ink">next working day</span>{" "}
+            (not weekends or holidays). The first payout waits until your
+            Paystack subaccount is verified.
+          </li>
+        </ul>
+        <p className="text-sm">
+          <Link
+            href="/dashboard/earnings"
+            className="font-medium text-brand-700 underline-offset-2 hover:underline"
+          >
+            More detail on earnings →
+          </Link>
+        </p>
+      </section>
 
       <div
         className={
@@ -91,80 +104,78 @@ export default async function MoneyPage({
         }
       >
         <p className="font-medium text-ink">
-          Paystack {mode} mode · {paystackReady ? "connected" : "keys missing"}
+          Paystack {mode} · {paystackReady ? "connected" : "keys missing"}
+          {payoutReady ? " · payout verified" : " · payout pending verification"}
         </p>
         <p className="mt-1 text-sm text-ink-muted">
-          {paystackReady
-            ? mode === "test"
-              ? "Using test keys. Charges will not move real money."
-              : "Using live keys. Customer payments are real."
-            : "Add PAYSTACK_TEST_* or PAYSTACK_LIVE_* keys in .env.local and restart. See More → Payments."}
+          {mode === "test"
+            ? "Test mode: charges do not move real MoMo money."
+            : payoutReady
+              ? `Live mode. Your share settles to your ${channel} on Paystack’s next working-day payout.`
+              : "Live mode, but Paystack still needs the subaccount verified before the first MoMo/bank payout leaves."}
         </p>
       </div>
 
-      {!vendor.payoutVerifiedAt && (
+      {!vendor.paystackSubaccountCode && (
         <div className="rounded-card border border-closing/30 bg-closing-tint px-5 py-4">
-          <p className="font-medium text-ink">Payouts are not connected</p>
+          <p className="font-medium text-ink">Connect payouts to receive money</p>
           <p className="mt-1 text-sm text-ink-muted">
-            Customers cannot pay you until a mobile money number is linked.
+            Link MoMo or a bank account so Paystack knows where your share
+            should go.
           </p>
-          <ButtonLink href="/onboarding/payout" size="sm" className="mt-3">
+          <ButtonLink href="/onboarding/payout?from=more" size="sm" className="mt-3">
             Connect payouts
           </ButtonLink>
         </div>
       )}
 
-      <section aria-label="Revenue summary">
-        <dl className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <section aria-label="Totals">
+        <dl className="grid grid-cols-2 gap-3 sm:grid-cols-3">
           <Stat
-            label="Inbound"
-            hint="Goods + shipping paid"
+            label="Customers paid"
+            hint="All successful charges"
             value={formatGhs(money.inbound)}
-            tone="in"
           />
           <Stat
-            label="Outbound"
-            hint={`Platform fee (${PLATFORM_FEE_PERCENT.goods}%)`}
+            label={`Our fee (${PLATFORM_FEE_PERCENT.goods}%)`}
+            hint="Kept on Paystack"
             value={formatGhs(money.outbound)}
             tone="out"
           />
           <Stat
-            label="Net to you"
-            hint="Inbound − fee"
+            label="Your share"
+            hint="What settles to you"
             value={formatGhs(money.net)}
             tone="net"
-          />
-          <Stat
-            label="Shipping in"
-            hint="Pass-through, no fee"
-            value={formatGhs(money.freightInbound)}
           />
         </dl>
       </section>
 
       <section className="space-y-3">
-        <div className="flex flex-wrap items-end justify-between gap-3">
-          <div>
-            <h2 className="font-display text-base font-semibold text-ink">
-              Transactions
-            </h2>
-            <p className="text-sm text-ink-muted">
-              Every successful payment across your orders.
-            </p>
-          </div>
-          <TabLinks active={tab} />
+        <div>
+          <h2 className="font-display text-base font-semibold text-ink">
+            Payments
+          </h2>
+          <p className="text-sm text-ink-muted">
+            Each row shows what the customer paid and what you should receive.
+          </p>
         </div>
 
-        {visible.length === 0 ? (
+        {money.settlements.length === 0 ? (
           <EmptyState
             icon={Wallet}
-            title="No transactions yet"
-            description="When a customer pays for goods or shipping, the row lands here."
+            title="No payments yet"
+            description="When a customer pays for goods or shipping, the split appears here."
           />
         ) : (
           <ul className="divide-y divide-border rounded-card border border-border bg-surface">
-            {visible.map((row) => (
-              <TransactionRow key={row.id} row={row} />
+            {money.settlements.map((row) => (
+              <SettlementRow
+                key={row.id}
+                row={row}
+                payoutReady={payoutReady}
+                channel={channel}
+              />
             ))}
           </ul>
         )}
@@ -212,91 +223,72 @@ export default async function MoneyPage({
   );
 }
 
-function TabLinks({ active }: { active: "all" | "inbound" | "outbound" }) {
-  const tabs = [
-    { id: "all" as const, label: "All", href: "/dashboard/money" },
-    {
-      id: "inbound" as const,
-      label: "Inbound",
-      href: "/dashboard/money?tab=inbound",
-    },
-    {
-      id: "outbound" as const,
-      label: "Outbound",
-      href: "/dashboard/money?tab=outbound",
-    },
-  ];
-
-  return (
-    <div className="flex rounded-control border border-border bg-surface p-0.5 text-sm">
-      {tabs.map((tab) => (
-        <Link
-          key={tab.id}
-          href={tab.href}
-          className={cn(
-            "rounded-[calc(var(--radius-control)-2px)] px-3 py-1.5 transition-colors",
-            active === tab.id
-              ? "bg-brand-50 font-medium text-brand-800 dark:bg-brand-950/60 dark:text-brand-100"
-              : "text-ink-muted hover:text-ink",
-          )}
-        >
-          {tab.label}
-        </Link>
-      ))}
-    </div>
-  );
-}
-
-function TransactionRow({ row }: { row: VendorTransaction }) {
-  const inbound = row.direction === "inbound";
-  const label =
-    row.kind === "goods"
-      ? "Goods payment"
-      : row.kind === "freight"
-        ? "Shipping payment"
-        : "Platform fee";
+function SettlementRow({
+  row,
+  payoutReady,
+  channel,
+}: {
+  row: VendorSettlement;
+  payoutReady: boolean;
+  channel: string;
+}) {
+  const isGoods = row.kind === "goods";
 
   return (
     <li>
       <Link
         href={`/o/${row.publicToken}`}
-        className="flex items-start justify-between gap-4 px-4 py-3 transition-colors hover:bg-surface-muted"
+        className="block px-4 py-4 transition-colors hover:bg-surface-muted"
       >
-        <div className="flex min-w-0 gap-3">
-          <span
-            className={cn(
-              "mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-full",
-              inbound ? "bg-open-tint text-open" : "bg-closing-tint text-closing",
-            )}
-            aria-hidden
-          >
-            {inbound ? (
-              <ArrowDownLeft className="size-4" />
-            ) : (
-              <ArrowUpRight className="size-4" />
-            )}
-          </span>
+        <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0">
             <p className="truncate font-medium text-ink">{row.customerName}</p>
             <p className="text-xs text-ink-muted">
-              {label} · <span data-numeric>{row.orderCode}</span>
+              {isGoods ? "Goods" : "Shipping"} ·{" "}
+              <span data-numeric>{row.orderCode}</span>
             </p>
             <p className="text-xs text-ink-subtle">
               {row.dropTitle} · Batch {row.batchNumber} ·{" "}
               {formatAccraDateTime(row.paidAt)}
             </p>
           </div>
+          <div className="text-right">
+            <p className="text-[11px] tracking-wide text-ink-subtle uppercase">
+              Your share
+            </p>
+            <p
+              className="font-display text-lg font-semibold text-open"
+              data-numeric
+            >
+              {formatGhs(row.yourShare)}
+            </p>
+          </div>
         </div>
-        <p
-          className={cn(
-            "shrink-0 font-display font-semibold tabular-nums",
-            inbound ? "text-open" : "text-closing",
-          )}
-          data-numeric
-        >
-          {inbound ? "+" : "−"}
-          {formatGhs(row.amount)}
-        </p>
+
+        <dl className="mt-3 grid grid-cols-2 gap-2 text-xs sm:grid-cols-3">
+          <div className="rounded-control bg-surface-muted px-3 py-2">
+            <dt className="text-ink-subtle">Customer paid</dt>
+            <dd className="mt-0.5 font-medium text-ink" data-numeric>
+              {formatGhs(row.customerPaid)}
+            </dd>
+          </div>
+          <div className="rounded-control bg-surface-muted px-3 py-2">
+            <dt className="text-ink-subtle">
+              Our fee{isGoods ? ` (${PLATFORM_FEE_PERCENT.goods}%)` : ""}
+            </dt>
+            <dd className="mt-0.5 font-medium text-closing" data-numeric>
+              {formatGhs(row.platformFee)}
+            </dd>
+          </div>
+          <div className="col-span-2 rounded-control bg-surface-muted px-3 py-2 sm:col-span-1">
+            <dt className="text-ink-subtle">When you receive it</dt>
+            <dd className="mt-0.5 font-medium text-ink">
+              {!payoutReady
+                ? "After Paystack verifies your payout, then next working day"
+                : `Next working day to your ${channel}`}
+            </dd>
+          </div>
+        </dl>
       </Link>
     </li>
   );
@@ -311,19 +303,19 @@ function Stat({
   label: string;
   value: string;
   hint?: string;
-  tone?: "in" | "out" | "net";
+  tone?: "out" | "net";
 }) {
   return (
     <div className="rounded-card border border-border bg-surface px-4 py-3">
       <dt className="text-xs text-ink-muted">{label}</dt>
       <dd
-        className={cn(
-          "mt-0.5 font-display text-lg font-semibold",
-          tone === "in" && "text-open",
-          tone === "out" && "text-closing",
-          tone === "net" && "text-ink",
-          !tone && "text-ink",
-        )}
+        className={
+          tone === "out"
+            ? "mt-0.5 font-display text-lg font-semibold text-closing"
+            : tone === "net"
+              ? "mt-0.5 font-display text-lg font-semibold text-open"
+              : "mt-0.5 font-display text-lg font-semibold text-ink"
+        }
         data-numeric
       >
         {value}

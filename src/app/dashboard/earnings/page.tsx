@@ -35,10 +35,10 @@ export default async function EarningsPage() {
       </p>
 
       <dl className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-        <Stat label="Net earnings" value={formatGhs(money.net)} emphasis />
-        <Stat label="Inbound collected" value={formatGhs(money.inbound)} />
+        <Stat label="Your share" value={formatGhs(money.net)} emphasis />
+        <Stat label="Customers paid" value={formatGhs(money.inbound)} />
         <Stat
-          label={`Platform fee (${PLATFORM_FEE_PERCENT.goods}%)`}
+          label={`Our fee (${PLATFORM_FEE_PERCENT.goods}%)`}
           value={formatGhs(money.outbound)}
         />
       </dl>
@@ -117,7 +117,7 @@ export default async function EarningsPage() {
           href="/dashboard/money"
           className="font-medium text-brand-700 underline-offset-2 hover:underline"
         >
-          Money → Transactions
+          Money → Payments
         </Link>
         .
       </section>

@@ -5,14 +5,8 @@ import type { Pesewas } from "@/lib/money";
 import { percentOf } from "@/lib/money";
 import { createClient } from "@/lib/supabase/server";
 
-export type TransactionDirection = "inbound" | "outbound";
-
-export type VendorTransaction = {
+export type VendorSettlement = {
   id: string;
-  direction: TransactionDirection;
-  /** Goods payment, freight payment, or platform fee on goods. */
-  kind: "goods" | "freight" | "platform_fee";
-  amount: Pesewas;
   paidAt: string;
   orderId: string;
   orderCode: string;
@@ -20,23 +14,28 @@ export type VendorTransaction = {
   customerName: string;
   dropTitle: string;
   batchNumber: number;
+  /** goods = split fee; freight = 100% to vendor. */
+  kind: "goods" | "freight";
+  /** What the customer was charged. */
+  customerPaid: Pesewas;
+  /** Platform cut (0 for shipping). */
+  platformFee: Pesewas;
+  /** What Paystack should settle to the vendor. */
+  yourShare: Pesewas;
 };
 
 export type VendorMoneySummary = {
-  /** Successful customer payments (goods + freight). */
   inbound: Pesewas;
-  /** Platform cut on goods (never on freight). */
   outbound: Pesewas;
-  /** What settles to the vendor: inbound − outbound. */
   net: Pesewas;
   goodsInbound: Pesewas;
   freightInbound: Pesewas;
-  transactions: VendorTransaction[];
+  settlements: VendorSettlement[];
 };
 
 /**
- * Ledger of every successful payment across the vendor's orders, plus a
- * matching outbound platform-fee line for each goods payment.
+ * One row per successful payment, with an explicit “your share” so vendors
+ * are not left guessing between inbound totals and platform fee lines.
  */
 export async function getVendorMoney(
   vendorId: string,
@@ -51,7 +50,7 @@ export async function getVendorMoney(
     .eq("vendor_id", vendorId)
     .is("archived_at", null);
 
-  const transactions: VendorTransaction[] = [];
+  const settlements: VendorSettlement[] = [];
 
   for (const drop of drops ?? []) {
     for (const batch of drop.batches ?? []) {
@@ -62,11 +61,14 @@ export async function getVendorMoney(
           if (payment.status !== "success" || !payment.paid_at) continue;
 
           const kind = payment.type === "freight" ? "freight" : "goods";
-          transactions.push({
+          const customerPaid = payment.amount;
+          const platformFee =
+            kind === "goods" && PLATFORM_FEE_PERCENT.goods > 0
+              ? percentOf(customerPaid, PLATFORM_FEE_PERCENT.goods)
+              : 0;
+
+          settlements.push({
             id: payment.id,
-            direction: "inbound",
-            kind,
-            amount: payment.amount,
             paidAt: payment.paid_at,
             orderId: order.id,
             orderCode: order.code,
@@ -74,43 +76,26 @@ export async function getVendorMoney(
             customerName,
             dropTitle: drop.title,
             batchNumber: batch.number,
+            kind,
+            customerPaid,
+            platformFee,
+            yourShare: customerPaid - platformFee,
           });
-
-          if (kind === "goods" && PLATFORM_FEE_PERCENT.goods > 0) {
-            const fee = percentOf(payment.amount, PLATFORM_FEE_PERCENT.goods);
-            if (fee > 0) {
-              transactions.push({
-                id: `${payment.id}-fee`,
-                direction: "outbound",
-                kind: "platform_fee",
-                amount: fee,
-                paidAt: payment.paid_at,
-                orderId: order.id,
-                orderCode: order.code,
-                publicToken: order.public_token,
-                customerName,
-                dropTitle: drop.title,
-                batchNumber: batch.number,
-              });
-            }
-          }
         }
       }
     }
   }
 
-  transactions.sort((a, b) => b.paidAt.localeCompare(a.paidAt));
+  settlements.sort((a, b) => b.paidAt.localeCompare(a.paidAt));
 
-  const goodsInbound = transactions
-    .filter((row) => row.direction === "inbound" && row.kind === "goods")
-    .reduce((sum, row) => sum + row.amount, 0);
-  const freightInbound = transactions
-    .filter((row) => row.direction === "inbound" && row.kind === "freight")
-    .reduce((sum, row) => sum + row.amount, 0);
+  const goodsInbound = settlements
+    .filter((row) => row.kind === "goods")
+    .reduce((sum, row) => sum + row.customerPaid, 0);
+  const freightInbound = settlements
+    .filter((row) => row.kind === "freight")
+    .reduce((sum, row) => sum + row.customerPaid, 0);
   const inbound = goodsInbound + freightInbound;
-  const outbound = transactions
-    .filter((row) => row.direction === "outbound")
-    .reduce((sum, row) => sum + row.amount, 0);
+  const outbound = settlements.reduce((sum, row) => sum + row.platformFee, 0);
 
   return {
     inbound,
@@ -118,6 +103,6 @@ export async function getVendorMoney(
     net: inbound - outbound,
     goodsInbound,
     freightInbound,
-    transactions,
+    settlements,
   };
 }
