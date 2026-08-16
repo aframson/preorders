@@ -6,6 +6,7 @@ import { z } from "zod";
 
 import { requireVendor } from "@/lib/auth";
 import { cancelBatchCutoff, scheduleBatchCutoff, triggerStatusBroadcast } from "@/lib/jobs";
+import { requireVerifiedPayout } from "@/lib/payout-verification";
 import type { BatchStatus } from "@/lib/status";
 import { createClient } from "@/lib/supabase/server";
 import { fromAccraInputValue } from "@/lib/time";
@@ -155,7 +156,9 @@ export async function openBatch(
   batchId: string,
   dropId: string,
 ): Promise<ActionState> {
-  await requireVendor();
+  const vendor = await requireVendor();
+  const payout = await requireVerifiedPayout(vendor);
+  if (!payout.ok) return { error: payout.error };
 
   const supabase = await createClient();
   const { data: batch } = await supabase

@@ -138,6 +138,7 @@ export async function resolveAccount(
 export type Subaccount = {
   subaccountCode: string;
   accountName: string;
+  isVerified: boolean;
 };
 
 /**
@@ -157,6 +158,7 @@ export async function createSubaccount(params: {
   const data = await call<{
     subaccount_code: string;
     account_name: string;
+    is_verified: boolean;
   }>("/subaccount", {
     method: "POST",
     body: JSON.stringify({
@@ -173,6 +175,22 @@ export async function createSubaccount(params: {
   return {
     subaccountCode: data.subaccount_code,
     accountName: data.account_name,
+    isVerified: Boolean(data.is_verified),
+  };
+}
+
+/** Fetch a subaccount — used to sync Paystack dashboard verification. */
+export async function fetchSubaccount(code: string): Promise<Subaccount> {
+  const data = await call<{
+    subaccount_code: string;
+    account_name: string;
+    is_verified: boolean;
+  }>(`/subaccount/${encodeURIComponent(code)}`);
+
+  return {
+    subaccountCode: data.subaccount_code,
+    accountName: data.account_name,
+    isVerified: Boolean(data.is_verified),
   };
 }
 

@@ -14,6 +14,7 @@ import { ButtonLink } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { requireVendor } from "@/lib/auth";
 import { env } from "@/lib/env";
+import { syncVendorPayoutStatus } from "@/lib/payout-verification";
 import { batchTotals, getDashboardBatches } from "@/lib/queries/dashboard";
 import { absoluteUrl, dropPath, shareUrl } from "@/lib/site";
 import { createClient } from "@/lib/supabase/server";
@@ -21,7 +22,7 @@ import { createClient } from "@/lib/supabase/server";
 export const metadata = { title: "Home" };
 
 export default async function DashboardHome() {
-  const vendor = await requireVendor();
+  const vendor = await syncVendorPayoutStatus(await requireVendor());
   const supabase = await createClient();
 
   const [batches, { data: drops }] = await Promise.all([
@@ -135,19 +136,32 @@ function buildActionQueue({
   drops,
   batches,
 }: {
-  vendor: { payoutVerifiedAt: string | null };
+  vendor: {
+    payoutVerifiedAt: string | null;
+    paystackSubaccountCode: string | null;
+  };
   drops: DropWithProducts[];
   batches: Awaited<ReturnType<typeof getDashboardBatches>>;
 }): ActionItem[] {
   const items: ActionItem[] = [];
 
-  if (!vendor.payoutVerifiedAt) {
+  if (!vendor.paystackSubaccountCode) {
     items.push({
       id: "payout",
       icon: Wallet,
       label: "Connect your payout number",
       detail: "Customers cannot pay you until this is done",
       href: "/onboarding/payout",
+      tone: "danger",
+    });
+  } else if (!vendor.payoutVerifiedAt) {
+    items.push({
+      id: "payout-verify",
+      icon: Wallet,
+      label: "Waiting for Paystack verification",
+      detail:
+        "An admin must verify your subaccount before you can add products or open a batch",
+      href: "/dashboard/more",
       tone: "danger",
     });
   }

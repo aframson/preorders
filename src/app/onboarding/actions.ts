@@ -244,7 +244,11 @@ export async function savePayout(
       .from("vendors")
       .update({
         paystack_subaccount_code: subaccount.subaccountCode,
-        payout_verified_at: new Date().toISOString(),
+        // Only stamp verified when Paystack already marks is_verified.
+        // Otherwise an admin must verify on the Paystack dashboard first.
+        payout_verified_at: subaccount.isVerified
+          ? new Date().toISOString()
+          : null,
       })
       .eq("id", vendor.id);
 

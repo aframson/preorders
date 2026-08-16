@@ -10,13 +10,16 @@ import { requireVendor } from "@/lib/auth";
 import { env } from "@/lib/env";
 import { PLATFORM_FEE_PERCENT } from "@/lib/fees";
 import { isPaystackConfigured, paystackMode } from "@/lib/paystack";
+import { syncVendorPayoutStatus } from "@/lib/payout-verification";
 import { absoluteUrl } from "@/lib/site";
 import { PickupLocationForm } from "./pickup-form";
+import { RefreshPayoutButton } from "./refresh-payout-button";
 
 export const metadata = { title: "More" };
 
 export default async function MorePage() {
   const vendor = await requireVendor();
+  const payout = await syncVendorPayoutStatus(vendor);
   const profileUrl = absoluteUrl(`/${vendor.slug}`, env.NEXT_PUBLIC_SITE_URL);
   const paystackReady = isPaystackConfigured();
   const mode = paystackMode();
@@ -88,9 +91,19 @@ export default async function MorePage() {
               </dd>
             </div>
             <div className="flex items-baseline justify-between gap-4">
-              <dt className="text-ink-muted">Your payout</dt>
+              <dt className="text-ink-muted">Subaccount</dt>
+              <dd className="font-medium text-ink" data-numeric>
+                {payout.subaccountCode ?? "Not connected"}
+              </dd>
+            </div>
+            <div className="flex items-baseline justify-between gap-4">
+              <dt className="text-ink-muted">Paystack verification</dt>
               <dd className="font-medium text-ink">
-                {vendor.payoutVerifiedAt ? "Connected" : "Not connected"}
+                {!payout.connected
+                  ? "Not connected"
+                  : payout.verified
+                    ? "Verified"
+                    : "Pending admin"}
               </dd>
             </div>
           </dl>
@@ -123,15 +136,30 @@ export default async function MorePage() {
       <Card>
         <CardHeader title="Payouts" />
         <CardBody className="space-y-4">
-          {vendor.payoutVerifiedAt ? (
+          {payout.verified ? (
             <p className="flex items-start gap-2.5 text-sm">
               <BadgeCheck className="mt-0.5 size-4 shrink-0 text-open" aria-hidden />
               <span className="text-ink-muted">
-                Connected. Goods payments settle straight to your mobile money
-                number, less our {PLATFORM_FEE_PERCENT.goods}% fee. We take
-                nothing on shipping.
+                Verified on Paystack. Goods payments settle straight to your
+                mobile money number, less our {PLATFORM_FEE_PERCENT.goods}% fee.
+                We take nothing on shipping.
               </span>
             </p>
+          ) : payout.connected ? (
+            <>
+              <p className="flex items-start gap-2.5 text-sm">
+                <ShieldAlert
+                  className="mt-0.5 size-4 shrink-0 text-closing"
+                  aria-hidden
+                />
+                <span className="text-ink-muted">
+                  Connected, but Paystack still shows this subaccount as
+                  unverified. An admin must verify it on the Paystack dashboard.
+                  Until then you cannot add products or open a batch.
+                </span>
+              </p>
+              <RefreshPayoutButton />
+            </>
           ) : (
             <>
               <p className="flex items-start gap-2.5 text-sm">

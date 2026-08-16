@@ -2,6 +2,7 @@ import Link from "next/link";
 
 import { Logo } from "@/components/brand/logo";
 import { BottomTabs, Sidebar } from "@/components/dashboard/nav";
+import { PayoutVerificationBanner } from "@/components/dashboard/payout-verification-banner";
 import { requireVendor } from "@/lib/auth";
 
 export default async function DashboardLayout({
@@ -20,6 +21,7 @@ export default async function DashboardLayout({
       <Sidebar businessName={vendor.businessName} />
 
       <div className="flex min-w-0 flex-1 flex-col">
+        <PayoutVerificationBanner vendor={vendor} />
         <main className="flex-1 px-5 py-6 lg:px-8 lg:py-8">{children}</main>
         <BottomTabs />
       </div>

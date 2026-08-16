@@ -1,7 +1,9 @@
 import { randomUUID } from "node:crypto";
 
 import { PageHeader } from "@/components/dashboard/page-header";
+import { ButtonLink } from "@/components/ui/button";
 import { requireVendor } from "@/lib/auth";
+import { syncVendorPayoutStatus } from "@/lib/payout-verification";
 import { createClient } from "@/lib/supabase/server";
 import { ProductForm } from "../product-form";
 
@@ -12,6 +14,33 @@ export default async function NewProductPage({
 }: PageProps<"/dashboard/drops/[dropId]/products/new">) {
   const { dropId } = await params;
   const vendor = await requireVendor();
+  const payout = await syncVendorPayoutStatus(vendor);
+
+  if (!payout.verified) {
+    return (
+      <>
+        <PageHeader title="Add product" />
+        <div className="max-w-lg space-y-4 rounded-card border border-closing/30 bg-closing-tint px-5 py-5 text-sm text-ink">
+          <p className="font-medium">
+            {payout.connected
+              ? "Paystack verification required"
+              : "Connect payouts first"}
+          </p>
+          <p className="text-ink-muted">
+            {payout.connected
+              ? "Your payout account is connected but still unverified on Paystack. Once an admin verifies the subaccount, you can upload products."
+              : "Connect your MoMo number, then wait for Paystack verification before adding products."}
+          </p>
+          <ButtonLink
+            href={payout.connected ? "/dashboard/more" : "/onboarding/payout"}
+            size="sm"
+          >
+            {payout.connected ? "Check verification status" : "Connect payouts"}
+          </ButtonLink>
+        </div>
+      </>
+    );
+  }
 
   const supabase = await createClient();
   const { data: categories } = await supabase

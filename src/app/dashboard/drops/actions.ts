@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 
 import { requireVendor } from "@/lib/auth";
+import { requireVerifiedPayout } from "@/lib/payout-verification";
 import { slugify } from "@/lib/site";
 import { createClient } from "@/lib/supabase/server";
 
@@ -207,7 +208,9 @@ export async function saveProduct(
   _prev: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  await requireVendor();
+  const vendor = await requireVendor();
+  const payout = await requireVerifiedPayout(vendor);
+  if (!payout.ok) return { error: payout.error };
 
   let payload: unknown;
   try {
