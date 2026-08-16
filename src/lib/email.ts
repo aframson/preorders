@@ -98,6 +98,15 @@ export async function sendEmail(input: SendEmailInput): Promise<boolean> {
     console.error("[email] send failed", error);
   }
 
+  if (!process.env.RESEND_API_KEY?.trim() && !process.env.EMAIL_SMTP_HOST?.trim()) {
+    console.warn(
+      "[email] skipped — set RESEND_API_KEY (and EMAIL_FROM) on Vercel so customers get order links.",
+      input.subject,
+      "→",
+      to,
+    );
+  }
+
   if (process.env.NODE_ENV === "development") {
     console.info("[email:dev]", input.subject, "→", to, "\n", input.text);
   }
