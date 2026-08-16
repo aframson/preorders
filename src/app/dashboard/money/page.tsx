@@ -8,7 +8,6 @@ import { StatusPill } from "@/components/ui/status-pill";
 import { requireVendor } from "@/lib/auth";
 import { PLATFORM_FEE_PERCENT } from "@/lib/fees";
 import { formatGhs } from "@/lib/money";
-import { isPaystackConfigured, paystackMode } from "@/lib/paystack";
 import {
   getVendorMoney,
   type VendorSettlement,
@@ -50,8 +49,6 @@ export default async function MoneyPage() {
     ),
   );
 
-  const paystackReady = isPaystackConfigured();
-  const mode = paystackMode();
   const payoutReady = Boolean(vendor.payoutVerifiedAt);
   const channel =
     vendor.payoutChannel === "bank" ? "bank account" : "mobile money";
@@ -95,26 +92,6 @@ export default async function MoneyPage() {
           </Link>
         </p>
       </section>
-
-      <div
-        className={
-          paystackReady
-            ? "rounded-card border border-open/30 bg-open-tint px-5 py-4"
-            : "rounded-card border border-closing/30 bg-closing-tint px-5 py-4"
-        }
-      >
-        <p className="font-medium text-ink">
-          Paystack {mode} · {paystackReady ? "connected" : "keys missing"}
-          {payoutReady ? " · payout verified" : " · payout pending verification"}
-        </p>
-        <p className="mt-1 text-sm text-ink-muted">
-          {mode === "test"
-            ? "Test mode: charges do not move real MoMo money."
-            : payoutReady
-              ? `Live mode. Your share settles to your ${channel} on Paystack’s next working-day payout.`
-              : "Live mode, but Paystack still needs the subaccount verified before the first MoMo/bank payout leaves."}
-        </p>
-      </div>
 
       {!vendor.paystackSubaccountCode && (
         <div className="rounded-card border border-closing/30 bg-closing-tint px-5 py-4">
