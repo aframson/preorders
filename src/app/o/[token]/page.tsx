@@ -134,6 +134,38 @@ export default async function OrderPage({
           fulfilment={order.fulfilment}
         />
 
+        <section className="space-y-3">
+          <h2 className="font-display text-base font-semibold text-ink">
+            Updates
+          </h2>
+
+          {order.timeline.length === 0 ? (
+            <p className="rounded-card border border-dashed border-border px-4 py-6 text-center text-sm text-ink-muted">
+              {order.vendor.businessName} will post updates here as the batch
+              moves.
+            </p>
+          ) : (
+            <ol className="space-y-3">
+              {order.timeline.map((event) => (
+                <li key={event.id} className="flex gap-3">
+                  <span
+                    className="mt-1.5 size-2 shrink-0 rounded-full bg-brand-400"
+                    aria-hidden
+                  />
+                  <div>
+                    <p className="text-sm text-ink">
+                      {event.message ?? event.type.replace(/_/g, " ")}
+                    </p>
+                    <p className="text-xs text-ink-subtle">
+                      {formatAccraDateTime(event.createdAt)}
+                    </p>
+                  </div>
+                </li>
+              ))}
+            </ol>
+          )}
+        </section>
+
         {order.status === "freight_paid" && (
           <MarkReceivedButton
             token={order.publicToken}
@@ -205,38 +237,6 @@ export default async function OrderPage({
               }
             />
           </div>
-        </section>
-
-        <section className="space-y-3">
-          <h2 className="font-display text-base font-semibold text-ink">
-            Updates
-          </h2>
-
-          {order.timeline.length === 0 ? (
-            <p className="rounded-card border border-dashed border-border px-4 py-6 text-center text-sm text-ink-muted">
-              {order.vendor.businessName} will post updates here as the batch
-              moves.
-            </p>
-          ) : (
-            <ol className="space-y-3">
-              {order.timeline.map((event) => (
-                <li key={event.id} className="flex gap-3">
-                  <span
-                    className="mt-1.5 size-2 shrink-0 rounded-full bg-brand-400"
-                    aria-hidden
-                  />
-                  <div>
-                    <p className="text-sm text-ink">
-                      {event.message ?? event.type.replace(/_/g, " ")}
-                    </p>
-                    <p className="text-xs text-ink-subtle">
-                      {formatAccraDateTime(event.createdAt)}
-                    </p>
-                  </div>
-                </li>
-              ))}
-            </ol>
-          )}
         </section>
 
         <section className="space-y-3 rounded-card border border-border bg-surface p-4 text-sm">
