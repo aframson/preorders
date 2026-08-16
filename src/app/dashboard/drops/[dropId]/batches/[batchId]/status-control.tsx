@@ -25,16 +25,25 @@ const NEXT_STEP: Partial<
   closed: { status: "purchasing", label: "Mark as buying from supplier" },
   purchasing: { status: "in_transit", label: "Mark as shipped" },
   in_transit: { status: "arrived", label: "Mark as arrived in Ghana" },
+  freight_invoiced: {
+    status: "settled",
+    label: "Mark batch complete",
+    confirm:
+      "Mark this batch complete? Use this when every customer has paid shipping.",
+  },
 };
 
 export function StatusControl({
   batchId,
   dropId,
   status,
+  canSettle = false,
 }: {
   batchId: string;
   dropId: string;
   status: BatchStatus;
+  /** When status is freight_invoiced and nobody still owes shipping. */
+  canSettle?: boolean;
 }) {
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -72,6 +81,7 @@ export function StatusControl({
 
   const next = NEXT_STEP[status];
   if (!next) return null;
+  if (status === "freight_invoiced" && !canSettle) return null;
 
   return (
     <div className="space-y-2">

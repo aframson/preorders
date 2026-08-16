@@ -230,6 +230,21 @@ export async function reconcilePayment(params: {
       .from("orders")
       .update({ status: "freight_paid", freight_paid_at: paidAt })
       .eq("id", payment.order_id);
+
+    const { data: order } = await admin
+      .from("orders")
+      .select("batch_id")
+      .eq("id", payment.order_id)
+      .maybeSingle();
+
+    if (order?.batch_id) {
+      const { settleBatchIfFreightComplete } = await import(
+        "@/lib/settlement.server"
+      );
+      await settleBatchIfFreightComplete(order.batch_id).catch((error) =>
+        console.error("[settle] batch after freight", error),
+      );
+    }
   }
 
   const { notifyOrderPaid } = await import("@/lib/notify");

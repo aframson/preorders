@@ -7,6 +7,7 @@ import { requireVendor } from "@/lib/auth";
 import { FREIGHT_MODES, formatBillableUnits } from "@/lib/freight";
 import { formatGhs } from "@/lib/money";
 import { batchStats, getBatchDetail } from "@/lib/queries/batch";
+import { settleBatchIfFreightComplete } from "@/lib/settlement.server";
 import { BATCH_STATUS, batchTone } from "@/lib/status";
 import { formatAccraDateTime, formatDeliveryWindow } from "@/lib/time";
 import { StatusControl } from "./status-control";
@@ -18,8 +19,16 @@ export default async function BatchLayout({
   const { dropId, batchId } = await params;
   await requireVendor();
 
-  const batch = await getBatchDetail(batchId);
+  let batch = await getBatchDetail(batchId);
   if (!batch) notFound();
+
+  // Heal batches that stayed on "Shipping invoiced" after everyone paid.
+  if (batch.status === "freight_invoiced") {
+    const healed = await settleBatchIfFreightComplete(batchId);
+    if (healed) {
+      batch = (await getBatchDetail(batchId)) ?? batch;
+    }
+  }
 
   const stats = batchStats(batch);
   const closesAt = new Date(batch.closesAt);
@@ -62,6 +71,9 @@ export default async function BatchLayout({
             batchId={batchId}
             dropId={dropId}
             status={batch.status}
+            canSettle={
+              batch.status === "freight_invoiced" && stats.awaitingFreight === 0
+            }
           />
         </div>
 
@@ -70,8 +82,15 @@ export default async function BatchLayout({
           <Stat label="Units" value={String(stats.unitCount)} />
           <Stat label="Value" value={formatGhs(stats.value)} />
           <Stat
-            label={FREIGHT_MODES[batch.freightMode].unitLabel === "kg" ? "Weight" : "Volume"}
-            value={formatBillableUnits(batch.freightMode, stats.freightUnitsTotal)}
+            label={
+              FREIGHT_MODES[batch.freightMode].unitLabel === "kg"
+                ? "Weight"
+                : "Volume"
+            }
+            value={formatBillableUnits(
+              batch.freightMode,
+              stats.freightUnitsTotal,
+            )}
           />
         </dl>
       </div>

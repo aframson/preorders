@@ -104,4 +104,61 @@ export async function finaliseFreight(params: {
   return preview;
 }
 
+/**
+ * Once every shipping order has paid freight, the batch is no longer
+ * "invoiced" — advance it to settled so the vendor status matches reality.
+ * Idempotent; safe to call after each freight payment or on batch view.
+ */
+export async function settleBatchIfFreightComplete(
+  batchId: string,
+): Promise<boolean> {
+  const admin = createAdminClient();
+
+  const { data: batch } = await admin
+    .from("batches")
+    .select("id, status")
+    .eq("id", batchId)
+    .maybeSingle();
+
+  if (!batch || batch.status !== "freight_invoiced") return false;
+
+  const { data: orders } = await admin
+    .from("orders")
+    .select("id, status, freight_paid_at, freight_invoiced_at")
+    .eq("batch_id", batchId)
+    .neq("status", "cancelled")
+    .neq("status", "pending_payment");
+
+  const shipping = orders ?? [];
+  if (shipping.length === 0) return false;
+
+  const allFreightPaid = shipping.every(
+    (order) =>
+      Boolean(order.freight_paid_at) ||
+      order.status === "freight_paid" ||
+      order.status === "collected",
+  );
+
+  if (!allFreightPaid) return false;
+
+  const { data: updated } = await admin
+    .from("batches")
+    .update({ status: "settled" })
+    .eq("id", batchId)
+    .eq("status", "freight_invoiced")
+    .select("id")
+    .maybeSingle();
+
+  if (!updated) return false;
+
+  await admin.from("batch_events").insert({
+    batch_id: batchId,
+    type: "settled",
+    message: "All shipping fees are paid. This batch is complete.",
+    is_public: true,
+  });
+
+  return true;
+}
+
 export { SettlementError };

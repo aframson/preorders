@@ -8,6 +8,7 @@ import { requireVendor } from "@/lib/auth";
 import { finaliseBatchClose } from "@/lib/batches";
 import { cancelBatchCutoff, scheduleBatchCutoff, triggerStatusBroadcast } from "@/lib/jobs";
 import { requireVerifiedPayout } from "@/lib/payout-verification";
+import { getBatchDetail, shippingOrders } from "@/lib/queries/batch";
 import type { BatchStatus } from "@/lib/status";
 import { createClient } from "@/lib/supabase/server";
 import { fromAccraInputValue } from "@/lib/time";
@@ -215,6 +216,7 @@ const STATUS_EVENT: Partial<Record<BatchStatus, string>> = {
   purchasing: "We are buying from the supplier now.",
   in_transit: "Your goods have left the supplier and are on the way.",
   arrived: "Your goods have arrived in Ghana.",
+  settled: "All shipping fees are paid. This batch is complete.",
 };
 
 export async function setBatchStatus(
@@ -250,6 +252,23 @@ export async function setBatchStatus(
   }
 
   const supabase = await createClient();
+
+  if (status === "settled") {
+    const batch = await getBatchDetail(batchId);
+    if (!batch) return { error: "Batch not found." };
+    if (batch.status !== "freight_invoiced") {
+      return { error: "This batch is not ready to mark complete." };
+    }
+    const unpaid = shippingOrders(batch).some(
+      (order) => order.freightInvoicedAt && !order.freightPaidAt,
+    );
+    if (unpaid) {
+      return {
+        error: "Some customers still owe shipping. Collect those first.",
+      };
+    }
+  }
+
   const { error } = await supabase
     .from("batches")
     .update({ status })
