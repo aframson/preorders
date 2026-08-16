@@ -192,9 +192,8 @@ export default async function MorePage() {
                   aria-hidden
                 />
                 <span className="text-ink-muted">
-                  Connected, but Paystack still shows this subaccount as
-                  unverified. An admin must verify it on the Paystack dashboard.
-                  Until then you cannot add products or open a batch.
+                  Your Preorders account isn’t verified yet — verification is
+                  underway. Products and batches unlock when it’s done.
                 </span>
               </p>
               <div className="flex flex-wrap gap-2">

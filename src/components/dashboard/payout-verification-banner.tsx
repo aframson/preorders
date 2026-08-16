@@ -1,13 +1,11 @@
-import { ShieldAlert } from "lucide-react";
 import Link from "next/link";
 
-import { ButtonLink } from "@/components/ui/button";
 import type { VendorContext } from "@/lib/auth";
 import { syncVendorPayoutStatus } from "@/lib/payout-verification";
 
 /**
- * Shown across the vendor dashboard while Paystack still has the subaccount
- * as unverified (or payouts were never connected).
+ * Dashboard strip while the vendor cannot sell yet — branded, short, grainy.
+ * Avoids the generic amber "warning card" look.
  */
 export async function PayoutVerificationBanner({
   vendor,
@@ -21,47 +19,48 @@ export async function PayoutVerificationBanner({
   const pending = status.connected && !status.verified;
 
   return (
-    <div className="border-b border-closing/30 bg-closing-tint px-5 py-3 lg:px-8">
-      <div className="mx-auto flex max-w-3xl items-start gap-3 text-sm text-ink">
-        <ShieldAlert
-          className="mt-0.5 size-4 shrink-0 text-closing"
-          aria-hidden
-        />
-        <div className="min-w-0 flex-1 space-y-2">
-          {pending ? (
-            <>
-              <p className="font-medium">Payout pending Paystack verification</p>
-              <p className="text-ink-muted">
-                Your MoMo account is connected, but Paystack still shows it as
-                unverified. An admin must verify the subaccount on the Paystack
-                dashboard before you can add products or open a batch for
-                orders.
-              </p>
-            </>
-          ) : (
-            <>
-              <p className="font-medium">Connect payouts to sell</p>
-              <p className="text-ink-muted">
-                Add your mobile money number so customers can pay you. After
-                that, Paystack verification unlocks products and batches.
-              </p>
-            </>
-          )}
-          <div className="flex flex-wrap gap-2">
-            {!status.connected && (
-              <ButtonLink href="/onboarding/payout" size="sm">
-                Connect payouts
-              </ButtonLink>
-            )}
-            <Link
-              href="/dashboard/more"
-              className="text-sm font-medium text-brand-700 underline-offset-2 hover:underline"
-            >
-              Check status in More
-            </Link>
-          </div>
+    <aside
+      aria-live="polite"
+      className="relative isolate overflow-hidden border-b border-brand-900/40 bg-brand-900 text-brand-50"
+    >
+      <span
+        aria-hidden
+        className="bg-grain-heavy pointer-events-none absolute inset-0 opacity-[0.55] mix-blend-overlay"
+      />
+      <span
+        aria-hidden
+        className="grain-film-soft grain-drift-slow pointer-events-none absolute inset-0 opacity-40 mix-blend-soft-light"
+      />
+      {/* Warm edge light — not a status tint, just depth on the plum. */}
+      <span
+        aria-hidden
+        className="pointer-events-none absolute -top-16 right-0 size-40 rounded-full bg-brand-400/20 blur-3xl"
+      />
+
+      <div className="relative mx-auto flex max-w-3xl flex-col gap-1 px-5 py-4 sm:flex-row sm:items-end sm:justify-between sm:gap-6 lg:px-8">
+        <div className="min-w-0 space-y-1">
+          <p className="font-display text-[0.7rem] font-semibold tracking-[0.18em] text-brand-200 uppercase">
+            Preorders
+          </p>
+          <p className="font-display text-lg leading-snug font-semibold text-brand-50 sm:text-xl">
+            {pending
+              ? "Your account isn’t verified yet"
+              : "Finish connecting payouts"}
+          </p>
+          <p className="max-w-md text-sm leading-relaxed text-brand-100/85">
+            {pending
+              ? "Verification is underway. You’ll be able to add products and open a batch once it’s done."
+              : "Add MoMo or a bank account so we can start verifying your Preorders account."}
+          </p>
         </div>
+
+        <Link
+          href={pending ? "/dashboard/more" : "/onboarding/payout"}
+          className="shrink-0 pt-1 text-sm font-semibold text-brand-100 underline decoration-brand-300/50 underline-offset-4 transition-colors hover:text-white hover:decoration-white"
+        >
+          {pending ? "See status" : "Connect payouts"}
+        </Link>
       </div>
-    </div>
+    </aside>
   );
 }

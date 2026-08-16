@@ -158,9 +158,8 @@ function buildActionQueue({
     items.push({
       id: "payout-verify",
       icon: Wallet,
-      label: "Waiting for Paystack verification",
-      detail:
-        "An admin must verify your subaccount before you can add products or open a batch",
+      label: "Preorders account not verified yet",
+      detail: "Verification is underway — products and batches unlock after",
       href: "/dashboard/more",
       tone: "danger",
     });
