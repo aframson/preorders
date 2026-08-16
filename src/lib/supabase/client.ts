@@ -1,0 +1,12 @@
+import { createBrowserClient } from "@supabase/ssr";
+
+import type { Database } from "@/lib/database.types";
+import { env } from "@/lib/env";
+
+/** Browser client. Runs as `anon`, so RLS is the only thing guarding it. */
+export function createClient() {
+  return createBrowserClient<Database>(
+    env.NEXT_PUBLIC_SUPABASE_URL,
+    env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+  );
+}

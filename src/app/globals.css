@@ -1,26 +1,702 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* ---------------------------------------------------------------------------
+   Aubergine & Cream
+   The brand sits in the plum family so it never collides with the status
+   palette. Status colours are reserved: they only ever describe batch or
+   order state, never decoration.
+--------------------------------------------------------------------------- */
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --canvas: #fdfbf8;
+  --surface: #ffffff;
+  --surface-muted: #f7f3ee;
+  --surface-sunken: #f2ece5;
+
+  --ink: #1a1614;
+  --ink-muted: #6b615c;
+  --ink-subtle: #9a8f88;
+  --ink-inverse: #fdfbf8;
+
+  --border: #e8e1db;
+  --border-strong: #d6ccc3;
+}
+
+.dark {
+  --canvas: #14110f;
+  --surface: #1f1a18;
+  --surface-muted: #262020;
+  --surface-sunken: #100e0d;
+
+  --ink: #f5f1ec;
+  --ink-muted: #a89d96;
+  --ink-subtle: #7a6f68;
+  --ink-inverse: #14110f;
+
+  --border: #332b27;
+  --border-strong: #453b35;
+}
+
+/* `static` keeps every token emitted as a CSS variable even when no utility
+   class references it. Tailwind prunes unused theme values by default, which
+   breaks the OG card renderer and anywhere else a token is read dynamically. */
+@theme static {
+  /* Brand ---------------------------------------------------------------- */
+  --color-brand-50: #faf4f8;
+  --color-brand-100: #f3e8ef;
+  --color-brand-200: #e5cdde;
+  --color-brand-300: #d0a8c4;
+  --color-brand-400: #b173a0;
+  --color-brand-500: #8b3f7a;
+  --color-brand-600: #6e3560;
+  --color-brand-700: #5a2a4e;
+  --color-brand-800: #4a2340;
+  --color-brand-900: #3b1b33;
+  --color-brand-950: #240f1f;
+
+  /* Status — reserved, never used for branding --------------------------- */
+  --color-open: #047857;
+  --color-open-tint: #c6f6df;
+  /* Gold rather than amber, so "closing soon" (time) stays clearly distinct
+     from "arrived / shipping due" (money) while both keep 4.5:1 on cream. */
+  --color-closing: #a16207;
+  --color-closing-tint: #fffbeb;
+  --color-closed: #475569;
+  --color-closed-tint: #f1f5f9;
+  --color-transit: #2563eb;
+  --color-transit-tint: #eff6ff;
+  --color-arrived: #c2410c;
+  --color-arrived-tint: #fff7ed;
+  --color-settled: #6b7280;
+  --color-settled-tint: #f9fafb;
+  --color-danger: #dc2626;
+  --color-danger-tint: #fef2f2;
+
+  /* Shape ---------------------------------------------------------------- */
+  --radius-control: 0.75rem;
+  --radius-card: 1rem;
+  --radius-sheet: 1.5rem;
+
+  /* Depth comes from borders. These are the only two shadows in the system. */
+  --shadow-bar: 0 -1px 0 0 rgb(26 22 20 / 0.06), 0 -12px 28px -16px rgb(26 22 20 / 0.25);
+  --shadow-sheet: 0 -2px 0 0 rgb(26 22 20 / 0.04), 0 -24px 48px -24px rgb(26 22 20 / 0.35);
+
+  --font-display: var(--font-display), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-canvas: var(--canvas);
+  --color-surface: var(--surface);
+  --color-surface-muted: var(--surface-muted);
+  --color-surface-sunken: var(--surface-sunken);
+
+  --color-ink: var(--ink);
+  --color-ink-muted: var(--ink-muted);
+  --color-ink-subtle: var(--ink-subtle);
+  --color-ink-inverse: var(--ink-inverse);
+
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+@layer base {
+  * {
+    border-color: var(--border);
+  }
+
+  body {
+    background-color: var(--canvas);
+    color: var(--ink);
+    font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+    font-optical-sizing: auto;
+    font-variation-settings: "wdth" 100;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: var(--font-display), ui-sans-serif, system-ui, sans-serif;
+    font-optical-sizing: auto;
+    letter-spacing: -0.02em;
+    text-wrap: balance;
+  }
+
+  /* 16px minimum on form controls also stops iOS zooming on focus. */
+  input,
+  select,
+  textarea {
+    font-size: 1rem;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-brand-500);
+    outline-offset: 2px;
+  }
+
+  /* Money and countdowns must not reflow as digits change. */
+  [data-numeric] {
+    font-variant-numeric: tabular-nums;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@layer utilities {
+  /* Sticky bottom bars have to clear the iOS home indicator. */
+  .pb-safe {
+    padding-bottom: max(1rem, env(safe-area-inset-bottom));
+  }
+
+  /*
+    Floating actions have to clear the bottom tab bar, which is 3.5rem of rows
+    plus the same home-indicator padding as `.pb-safe`. Both offsets live here
+    rather than in a `lg:` utility, so nothing can win the cascade by accident.
+    The tab bar is hidden from `lg`, where a plain inset is right.
+  */
+  .bottom-above-tabs {
+    bottom: calc(3.5rem + max(1rem, env(safe-area-inset-bottom)) + 1rem);
+  }
+
+  @media (width >= 64rem) {
+    .bottom-above-tabs {
+      bottom: 2rem;
+    }
+  }
+
+  .scrollbar-none {
+    scrollbar-width: none;
+  }
+
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
+  }
+
+  /*
+    Film grain. PNG tiles rather than SVG feTurbulence — Safari and Firefox
+    both render CSS-background SVG filters unreliably, especially animated.
+  */
+  .bg-grain {
+    background-image: url("/grain-fine.png");
+    background-size: 110px 110px;
+    background-repeat: repeat;
+  }
+
+  .bg-grain-heavy {
+    background-image: url("/grain-heavy.png");
+    background-size: 72px 72px;
+    background-repeat: repeat;
+  }
+
+  /*
+    Visible film on mockups. Multiply against the UI — not a white sheet.
+    These must not sit under an ancestor `mask`, which drops mix-blend.
+  */
+  .grain-film,
+  .grain-film-soft {
+    position: absolute;
+    top: -22%;
+    right: -22%;
+    bottom: -22%;
+    left: -22%;
+    background-image: url("/grain-heavy.png"), url("/grain-fine.png");
+    background-repeat: repeat, repeat;
+    -webkit-mix-blend-mode: multiply;
+    mix-blend-mode: multiply;
+  }
+
+  .grain-film {
+    background-size: 64px 64px, 118px 118px;
+    opacity: 0.68;
+  }
+
+  .grain-film-soft {
+    background-size: 88px 88px, 160px 160px;
+    background-position: 28px 12px;
+    opacity: 0.48;
+  }
+
+  /*
+    Button grain lives on a ::before overlay so the label never moves, and
+    hover can drift the speckle with a GPU transform. `relative` is skipped
+    when the element is already positioned — otherwise it wins the cascade
+    over Tailwind `fixed` and a FAB falls into document flow.
+  */
+  .grain-ink,
+  .grain-paper {
+    isolation: isolate;
+    overflow: hidden;
+  }
+
+  .grain-ink:where(:not(.fixed, .absolute, .sticky)),
+  .grain-paper:where(:not(.fixed, .absolute, .sticky)) {
+    position: relative;
+  }
+
+  .grain-ink::before,
+  .grain-paper::before {
+    content: "";
+    position: absolute;
+    top: -45%;
+    right: -45%;
+    bottom: -45%;
+    left: -45%;
+    pointer-events: none;
+    z-index: -1;
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
+    -webkit-transform: translate3d(0, 0, 0);
+    transform: translate3d(0, 0, 0);
+  }
+
+  .grain-ink::before {
+    background-image: url("/grain-heavy.png"), url("/grain-fine.png");
+    background-size: 56px 56px, 110px 110px;
+    background-repeat: repeat, repeat;
+    -webkit-mix-blend-mode: overlay;
+    mix-blend-mode: overlay;
+    opacity: 0.28;
+  }
+
+  .grain-paper::before {
+    background-image: url("/grain-fine.png");
+    background-size: 72px 72px;
+    background-repeat: repeat;
+    -webkit-mix-blend-mode: multiply;
+    mix-blend-mode: multiply;
+    opacity: 0.16;
+  }
+
+  /*
+    Sand grain. Specks hop via stepped background-position (not a sliding
+    sheet). Two properties run at once so layers don't move in lockstep.
+  */
+  .grain-drift,
+  .grain-drift-alt,
+  .grain-drift-slow {
+    position: absolute;
+    top: -22%;
+    right: -22%;
+    bottom: -22%;
+    left: -22%;
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
+    -webkit-transform: translate3d(0, 0, 0);
+    transform: translate3d(0, 0, 0);
+  }
+
+  .grain-film,
+  .grain-film-soft {
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .grain-drift {
+      -webkit-animation: grain-sand 32s linear infinite,
+        grain-jitter 18s linear infinite;
+      animation: grain-sand 32s linear infinite, grain-jitter 18s linear infinite;
+    }
+
+    .grain-drift-alt {
+      -webkit-animation: grain-sand-alt 41s linear infinite,
+        grain-jitter 24s linear infinite reverse;
+      animation: grain-sand-alt 41s linear infinite,
+        grain-jitter 24s linear infinite reverse;
+    }
+
+    .grain-drift-slow {
+      -webkit-animation: grain-sand 53s linear infinite reverse,
+        grain-jitter 31s linear infinite;
+      animation: grain-sand 53s linear infinite reverse,
+        grain-jitter 31s linear infinite;
+    }
+
+    .hero-chat-fade::before {
+      -webkit-animation: grain-sand-dual 38s linear infinite,
+        grain-jitter 22s linear infinite reverse;
+      animation: grain-sand-dual 38s linear infinite,
+        grain-jitter 22s linear infinite reverse;
+    }
+  }
+
+  @-webkit-keyframes grain-sand {
+    0% {
+      background-position: 0 0;
+    }
+    11% {
+      background-position: 19px -37px;
+    }
+    23% {
+      background-position: -41px 8px;
+    }
+    34% {
+      background-position: 7px 44px;
+    }
+    48% {
+      background-position: -28px -16px;
+    }
+    61% {
+      background-position: 36px 22px;
+    }
+    73% {
+      background-position: -13px -48px;
+    }
+    86% {
+      background-position: 48px 5px;
+    }
+    100% {
+      background-position: 0 0;
+    }
+  }
+
+  @keyframes grain-sand {
+    0% {
+      background-position: 0 0;
+    }
+    11% {
+      background-position: 19px -37px;
+    }
+    23% {
+      background-position: -41px 8px;
+    }
+    34% {
+      background-position: 7px 44px;
+    }
+    48% {
+      background-position: -28px -16px;
+    }
+    61% {
+      background-position: 36px 22px;
+    }
+    73% {
+      background-position: -13px -48px;
+    }
+    86% {
+      background-position: 48px 5px;
+    }
+    100% {
+      background-position: 0 0;
+    }
+  }
+
+  @-webkit-keyframes grain-sand-alt {
+    0% {
+      background-position: 12px 8px;
+    }
+    14% {
+      background-position: -33px 29px;
+    }
+    27% {
+      background-position: 44px -11px;
+    }
+    39% {
+      background-position: -8px -39px;
+    }
+    52% {
+      background-position: 21px 46px;
+    }
+    66% {
+      background-position: -47px -6px;
+    }
+    79% {
+      background-position: 5px -27px;
+    }
+    91% {
+      background-position: 31px 18px;
+    }
+    100% {
+      background-position: 12px 8px;
+    }
+  }
+
+  @keyframes grain-sand-alt {
+    0% {
+      background-position: 12px 8px;
+    }
+    14% {
+      background-position: -33px 29px;
+    }
+    27% {
+      background-position: 44px -11px;
+    }
+    39% {
+      background-position: -8px -39px;
+    }
+    52% {
+      background-position: 21px 46px;
+    }
+    66% {
+      background-position: -47px -6px;
+    }
+    79% {
+      background-position: 5px -27px;
+    }
+    91% {
+      background-position: 31px 18px;
+    }
+    100% {
+      background-position: 12px 8px;
+    }
+  }
+
+  @-webkit-keyframes grain-sand-dual {
+    0% {
+      background-position: 0 0, 18px -9px;
+    }
+    13% {
+      background-position: 27px -31px, -22px 41px;
+    }
+    26% {
+      background-position: -44px 14px, 36px -17px;
+    }
+    38% {
+      background-position: 11px 47px, -39px 6px;
+    }
+    51% {
+      background-position: -19px -28px, 8px -44px;
+    }
+    64% {
+      background-position: 42px 9px, -15px 33px;
+    }
+    77% {
+      background-position: -7px -46px, 29px 12px;
+    }
+    89% {
+      background-position: 33px 21px, -48px -8px;
+    }
+    100% {
+      background-position: 0 0, 18px -9px;
+    }
+  }
+
+  @keyframes grain-sand-dual {
+    0% {
+      background-position: 0 0, 18px -9px;
+    }
+    13% {
+      background-position: 27px -31px, -22px 41px;
+    }
+    26% {
+      background-position: -44px 14px, 36px -17px;
+    }
+    38% {
+      background-position: 11px 47px, -39px 6px;
+    }
+    51% {
+      background-position: -19px -28px, 8px -44px;
+    }
+    64% {
+      background-position: 42px 9px, -15px 33px;
+    }
+    77% {
+      background-position: -7px -46px, 29px 12px;
+    }
+    89% {
+      background-position: 33px 21px, -48px -8px;
+    }
+    100% {
+      background-position: 0 0, 18px -9px;
+    }
+  }
+
+  @-webkit-keyframes grain-jitter {
+    0%,
+    100% {
+      -webkit-transform: translate3d(0, 0, 0);
+      transform: translate3d(0, 0, 0);
+    }
+    9% {
+      -webkit-transform: translate3d(0.35%, -0.55%, 0);
+      transform: translate3d(0.35%, -0.55%, 0);
+    }
+    21% {
+      -webkit-transform: translate3d(-0.5%, 0.2%, 0);
+      transform: translate3d(-0.5%, 0.2%, 0);
+    }
+    34% {
+      -webkit-transform: translate3d(0.25%, 0.6%, 0);
+      transform: translate3d(0.25%, 0.6%, 0);
+    }
+    47% {
+      -webkit-transform: translate3d(-0.4%, -0.3%, 0);
+      transform: translate3d(-0.4%, -0.3%, 0);
+    }
+    61% {
+      -webkit-transform: translate3d(0.55%, 0.15%, 0);
+      transform: translate3d(0.55%, 0.15%, 0);
+    }
+    74% {
+      -webkit-transform: translate3d(-0.2%, -0.5%, 0);
+      transform: translate3d(-0.2%, -0.5%, 0);
+    }
+    88% {
+      -webkit-transform: translate3d(0.15%, 0.4%, 0);
+      transform: translate3d(0.15%, 0.4%, 0);
+    }
+  }
+
+  @keyframes grain-jitter {
+    0%,
+    100% {
+      -webkit-transform: translate3d(0, 0, 0);
+      transform: translate3d(0, 0, 0);
+    }
+    9% {
+      -webkit-transform: translate3d(0.35%, -0.55%, 0);
+      transform: translate3d(0.35%, -0.55%, 0);
+    }
+    21% {
+      -webkit-transform: translate3d(-0.5%, 0.2%, 0);
+      transform: translate3d(-0.5%, 0.2%, 0);
+    }
+    34% {
+      -webkit-transform: translate3d(0.25%, 0.6%, 0);
+      transform: translate3d(0.25%, 0.6%, 0);
+    }
+    47% {
+      -webkit-transform: translate3d(-0.4%, -0.3%, 0);
+      transform: translate3d(-0.4%, -0.3%, 0);
+    }
+    61% {
+      -webkit-transform: translate3d(0.55%, 0.15%, 0);
+      transform: translate3d(0.55%, 0.15%, 0);
+    }
+    74% {
+      -webkit-transform: translate3d(-0.2%, -0.5%, 0);
+      transform: translate3d(-0.2%, -0.5%, 0);
+    }
+    88% {
+      -webkit-transform: translate3d(0.15%, 0.4%, 0);
+      transform: translate3d(0.15%, 0.4%, 0);
+    }
+  }
+
+  /*
+    One mask: opaque toward the copy, grainy dissolve toward the
+    right edge of the page. Dual mask-composite disagrees between
+    Safari and Firefox, so this stays a single radial.
+  */
+  .hero-chat-fade {
+    isolation: isolate;
+  }
+
+  /*
+    Hero mockup entrance. Starts off to the right, still tilted, and
+    eases into place. `.is-in` is toggled when the hero is on screen.
+  */
+  .hero-mock-slide {
+    -webkit-transform: translate3d(14%, 7%, 0) rotate(-6deg);
+    transform: translate3d(14%, 7%, 0) rotate(-6deg);
+    opacity: 0;
+  }
+
+  .hero-mock-slide.is-in {
+    -webkit-transform: translate3d(0, 0, 0) rotate(-6deg);
+    transform: translate3d(0, 0, 0) rotate(-6deg);
+    opacity: 1;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .hero-mock-slide {
+      -webkit-transition:
+        -webkit-transform 1.15s cubic-bezier(0.22, 1, 0.36, 1),
+        opacity 0.8s cubic-bezier(0.22, 1, 0.36, 1);
+      transition:
+        transform 1.15s cubic-bezier(0.22, 1, 0.36, 1),
+        opacity 0.8s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+  }
+
+  /* Grain that only lives in the right-hand dissolve. */
+  .hero-chat-fade::before {
+    content: "";
+    position: absolute;
+    top: -22%;
+    right: -22%;
+    bottom: -22%;
+    left: -22%;
+    pointer-events: none;
+    z-index: 5;
+    background-image: url("/grain-heavy.png"), url("/grain-fine.png");
+    background-size: 64px 64px, 120px 120px;
+    background-repeat: repeat, repeat;
+    -webkit-mix-blend-mode: multiply;
+    mix-blend-mode: multiply;
+    opacity: 0.42;
+    -webkit-mask-image: linear-gradient(
+      118deg,
+      transparent 18%,
+      rgba(0, 0, 0, 0.28) 48%,
+      #000 74%
+    );
+    mask-image: linear-gradient(
+      118deg,
+      transparent 18%,
+      rgba(0, 0, 0, 0.28) 48%,
+      #000 74%
+    );
+    -webkit-mask-size: 100% 100%;
+    mask-size: 100% 100%;
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
+    -webkit-transform: translate3d(0, 0, 0);
+    transform: translate3d(0, 0, 0);
+  }
+
+  .hero-chat-fade::after {
+    content: "";
+    position: absolute;
+    top: -10%;
+    right: -10%;
+    bottom: -10%;
+    left: -10%;
+    pointer-events: none;
+    z-index: 6;
+    background-image: linear-gradient(
+        90deg,
+        var(--canvas) 0%,
+        rgba(253, 251, 248, 0.4) 8%,
+        transparent 18%,
+        transparent 38%,
+        rgba(253, 251, 248, 0.28) 58%,
+        rgba(253, 251, 248, 0.72) 78%,
+        var(--canvas) 94%
+      ),
+      linear-gradient(
+        180deg,
+        transparent 38%,
+        rgba(253, 251, 248, 0.28) 62%,
+        rgba(253, 251, 248, 0.7) 82%,
+        var(--canvas) 96%
+      );
+    background-size: 100% 100%, 100% 100%;
+    background-repeat: no-repeat, no-repeat;
+  }
+
+  @supports not (mix-blend-mode: multiply) {
+    .bg-grain,
+    .bg-grain-heavy {
+      opacity: 0.12;
+    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    -webkit-animation-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    -webkit-animation-iteration-count: 1 !important;
+    animation-iteration-count: 1 !important;
+    -webkit-transition-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

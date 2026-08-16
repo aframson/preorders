@@ -1,3 +1,5 @@
+# Dependencies allowed to run install scripts. Both belong to the Trigger.dev
+# CLI: esbuild fetches its platform binary and @depot/cli its build client.
 allowBuilds:
-  sharp: false
-  unrs-resolver: false
+  '@depot/cli': true
+  esbuild: true
