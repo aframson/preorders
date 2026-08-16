@@ -137,14 +137,53 @@ export default async function MorePage() {
         <CardHeader title="Payouts" />
         <CardBody className="space-y-4">
           {payout.verified ? (
-            <p className="flex items-start gap-2.5 text-sm">
-              <BadgeCheck className="mt-0.5 size-4 shrink-0 text-open" aria-hidden />
-              <span className="text-ink-muted">
-                Verified on Paystack. Goods payments settle straight to your
-                mobile money number, less our {PLATFORM_FEE_PERCENT.goods}% fee.
-                We take nothing on shipping.
-              </span>
-            </p>
+            <>
+              <p className="flex items-start gap-2.5 text-sm">
+                <BadgeCheck className="mt-0.5 size-4 shrink-0 text-open" aria-hidden />
+                <span className="text-ink-muted">
+                  Verified on Paystack. Goods payments settle straight to your{" "}
+                  {payout.payoutChannel === "bank"
+                    ? "bank account"
+                    : "mobile money number"}
+                  , less our {PLATFORM_FEE_PERCENT.goods}% fee. We take nothing
+                  on shipping.
+                </span>
+              </p>
+              {(vendor.payoutAccountName || vendor.payoutAccountNumber) && (
+                <dl className="space-y-2 rounded-card border border-border px-4 py-3 text-sm">
+                  {vendor.payoutAccountName && (
+                    <div className="flex items-baseline justify-between gap-4">
+                      <dt className="text-ink-muted">Account name</dt>
+                      <dd className="font-medium text-ink">
+                        {vendor.payoutAccountName}
+                      </dd>
+                    </div>
+                  )}
+                  <div className="flex items-baseline justify-between gap-4">
+                    <dt className="text-ink-muted">Method</dt>
+                    <dd className="font-medium text-ink">
+                      {vendor.payoutChannel === "bank"
+                        ? "Bank account"
+                        : "Mobile money"}
+                      {vendor.payoutBankCode
+                        ? ` · ${vendor.payoutBankCode}`
+                        : ""}
+                    </dd>
+                  </div>
+                  {vendor.payoutAccountNumber && (
+                    <div className="flex items-baseline justify-between gap-4">
+                      <dt className="text-ink-muted">Account</dt>
+                      <dd className="font-medium text-ink" data-numeric>
+                        {vendor.payoutAccountNumber}
+                      </dd>
+                    </div>
+                  )}
+                </dl>
+              )}
+              <ButtonLink href="/onboarding/payout?from=more" size="sm">
+                Change payout method
+              </ButtonLink>
+            </>
           ) : payout.connected ? (
             <>
               <p className="flex items-start gap-2.5 text-sm">
@@ -158,7 +197,16 @@ export default async function MorePage() {
                   Until then you cannot add products or open a batch.
                 </span>
               </p>
-              <RefreshPayoutButton />
+              <div className="flex flex-wrap gap-2">
+                <RefreshPayoutButton />
+                <ButtonLink
+                  href="/onboarding/payout?from=more"
+                  variant="secondary"
+                  size="sm"
+                >
+                  Change payout method
+                </ButtonLink>
+              </div>
             </>
           ) : (
             <>
@@ -168,11 +216,12 @@ export default async function MorePage() {
                   aria-hidden
                 />
                 <span className="text-ink-muted">
-                  You have not connected a payout number yet. Customers cannot
-                  pay you until you do.
+                  You have not connected a payout account yet. Choose mobile
+                  money or a bank account — we show the registered name before
+                  you save.
                 </span>
               </p>
-              <ButtonLink href="/onboarding/payout" size="sm">
+              <ButtonLink href="/onboarding/payout?from=more" size="sm">
                 Connect payouts
               </ButtonLink>
             </>

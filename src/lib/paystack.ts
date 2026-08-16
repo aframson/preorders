@@ -194,6 +194,41 @@ export async function fetchSubaccount(code: string): Promise<Subaccount> {
   };
 }
 
+/** Update settlement details on an existing vendor subaccount. */
+export async function updateSubaccount(
+  code: string,
+  params: {
+    businessName: string;
+    settlementBank: string;
+    accountNumber: string;
+    percentageCharge: number;
+    primaryContactEmail?: string;
+    primaryContactPhone?: string;
+  },
+): Promise<Subaccount> {
+  const data = await call<{
+    subaccount_code: string;
+    account_name: string;
+    is_verified: boolean;
+  }>(`/subaccount/${encodeURIComponent(code)}`, {
+    method: "PUT",
+    body: JSON.stringify({
+      business_name: params.businessName,
+      settlement_bank: params.settlementBank,
+      account_number: params.accountNumber,
+      percentage_charge: params.percentageCharge,
+      primary_contact_email: params.primaryContactEmail,
+      primary_contact_phone: params.primaryContactPhone,
+    }),
+  });
+
+  return {
+    subaccountCode: data.subaccount_code,
+    accountName: data.account_name,
+    isVerified: Boolean(data.is_verified),
+  };
+}
+
 // Transactions ---------------------------------------------------------------
 
 export type InitialisedTransaction = {

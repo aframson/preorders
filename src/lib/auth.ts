@@ -27,6 +27,10 @@ export type VendorContext = {
   pickupMapsUrl: string | null;
   paystackSubaccountCode: string | null;
   payoutVerifiedAt: string | null;
+  payoutChannel: "mobile_money" | "bank" | null;
+  payoutBankCode: string | null;
+  payoutAccountNumber: string | null;
+  payoutAccountName: string | null;
 };
 
 /** The vendor the signed-in user belongs to, or null if onboarding is unfinished. */
@@ -36,13 +40,18 @@ export async function getVendor(): Promise<VendorContext | null> {
   const { data } = await supabase
     .from("vendor_members")
     .select(
-      "vendors(id, slug, business_name, logo_path, whatsapp_number, pickup_maps_url, paystack_subaccount_code, payout_verified_at)",
+      "vendors(id, slug, business_name, logo_path, whatsapp_number, pickup_maps_url, paystack_subaccount_code, payout_verified_at, payout_channel, payout_bank_code, payout_account_number, payout_account_name)",
     )
     .limit(1)
     .maybeSingle();
 
   const vendor = data?.vendors;
   if (!vendor) return null;
+
+  const channel =
+    vendor.payout_channel === "mobile_money" || vendor.payout_channel === "bank"
+      ? vendor.payout_channel
+      : null;
 
   return {
     id: vendor.id,
@@ -53,6 +62,10 @@ export async function getVendor(): Promise<VendorContext | null> {
     pickupMapsUrl: vendor.pickup_maps_url,
     paystackSubaccountCode: vendor.paystack_subaccount_code,
     payoutVerifiedAt: vendor.payout_verified_at,
+    payoutChannel: channel,
+    payoutBankCode: vendor.payout_bank_code,
+    payoutAccountNumber: vendor.payout_account_number,
+    payoutAccountName: vendor.payout_account_name,
   };
 }
 

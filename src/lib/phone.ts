@@ -55,6 +55,16 @@ export function normaliseMomoAccountNumber(input: string): string {
   return digits;
 }
 
+/** Ghana bank account numbers — digits only, typically 10–16 long. */
+export function normaliseBankAccountNumber(input: string): string {
+  return sanitisePhoneInput(input).replace(/\D/g, "");
+}
+
+export function isPlausibleBankAccountNumber(input: string): boolean {
+  const digits = normaliseBankAccountNumber(input);
+  return digits.length >= 8 && digits.length <= 20;
+}
+
 /** `+233241234567` reads as `024 123 4567` to someone in Accra. */
 export function formatLocalPhone(e164: string): string {
   const local = e164.startsWith("+233") ? `0${e164.slice(4)}` : e164;

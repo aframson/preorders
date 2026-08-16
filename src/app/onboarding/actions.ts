@@ -8,11 +8,17 @@ import { PLATFORM_FEE_PERCENT } from "@/lib/fees";
 import {
   createSubaccount,
   isPaystackConfigured,
-  isPaystackTestSecret,
   PaystackError,
   resolveAccount,
+  updateSubaccount,
 } from "@/lib/paystack";
-import { normaliseMomoAccountNumber, normalisePhone, isPlausibleGhanaPhone } from "@/lib/phone";
+import {
+  isPlausibleBankAccountNumber,
+  isPlausibleGhanaPhone,
+  normaliseBankAccountNumber,
+  normaliseMomoAccountNumber,
+  normalisePhone,
+} from "@/lib/phone";
 import { isReservedSlug, slugify } from "@/lib/site";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
@@ -153,62 +159,115 @@ export async function suggestSlug(businessName: string): Promise<string> {
 
 // Step 3 - payout ------------------------------------------------------------
 
+export type PayoutChannel = "mobile_money" | "bank";
+
 export type ResolveState = {
   accountName?: string | null;
   accountNumber?: string | null;
   bankCode?: string | null;
+  channel?: PayoutChannel | null;
   error?: string | null;
 };
 
+function parsePayoutChannel(value: FormDataEntryValue | null): PayoutChannel | null {
+  const raw = String(value ?? "").trim();
+  if (raw === "mobile_money" || raw === "bank") return raw;
+  return null;
+}
+
+function normalisePayoutAccount(
+  channel: PayoutChannel,
+  raw: string,
+): { accountNumber: string; error?: string } {
+  if (channel === "mobile_money") {
+    const accountNumber = normaliseMomoAccountNumber(raw);
+    if (!accountNumber) {
+      return { accountNumber: "", error: "Enter your MoMo number." };
+    }
+    if (accountNumber.length !== 10 || !accountNumber.startsWith("0")) {
+      return {
+        accountNumber,
+        error: "Enter a Ghana MoMo number like 024 123 4567.",
+      };
+    }
+    return { accountNumber };
+  }
+
+  const accountNumber = normaliseBankAccountNumber(raw);
+  if (!isPlausibleBankAccountNumber(accountNumber)) {
+    return {
+      accountNumber,
+      error: "Enter a valid bank account number (digits only).",
+    };
+  }
+  return { accountNumber };
+}
+
+/**
+ * Resolve must succeed and return a real account name before the vendor can
+ * connect payouts — MoMo or bank. No soft-pass: typos must be caught here.
+ */
 export async function resolvePayoutAccount(
   _prev: ResolveState,
   formData: FormData,
 ): Promise<ResolveState> {
   await requireVendor();
 
-  const rawNumber = String(formData.get("accountNumber") ?? "").trim();
+  const channel = parsePayoutChannel(formData.get("channel"));
   const bankCode = String(formData.get("bankCode") ?? "").trim();
-  const accountNumber = normaliseMomoAccountNumber(rawNumber);
+  const rawNumber = String(formData.get("accountNumber") ?? "").trim();
 
-  if (!accountNumber || !bankCode) {
-    return { error: "Choose your network and enter your number." };
+  if (!channel) {
+    return { error: "Choose Mobile money or Bank account." };
+  }
+  if (!bankCode) {
+    return {
+      error:
+        channel === "bank"
+          ? "Choose your bank."
+          : "Choose your MoMo network.",
+    };
   }
 
-  if (accountNumber.length !== 10 || !accountNumber.startsWith("0")) {
-    return { error: "Enter a Ghana MoMo number like 024 123 4567." };
+  const normalised = normalisePayoutAccount(channel, rawNumber);
+  if (normalised.error) {
+    return { error: normalised.error, channel, bankCode };
   }
 
   if (!isPaystackConfigured()) {
     return {
       error:
         "Payouts are not connected yet on this environment. You can skip this step and add it later.",
+      channel,
+      bankCode,
     };
   }
 
-  // Resolve is built for bank accounts. Real MoMo numbers often fail on
-  // *test* keys ("Could not resolve account name"). Soft-pass only when the
-  // active secret is actually `sk_test_` — never when live keys are in use.
   try {
-    const resolved = await resolveAccount(accountNumber, bankCode);
-    return {
-      accountName: resolved.accountName,
-      accountNumber: resolved.accountNumber,
-      bankCode,
-    };
-  } catch (error) {
-    if (isPaystackTestSecret()) {
+    const resolved = await resolveAccount(normalised.accountNumber, bankCode);
+    if (!resolved.accountName?.trim()) {
       return {
-        accountName: `Unverified · check ${bankCode} matches this number`,
-        accountNumber,
+        error:
+          "Paystack could not return an account name for those details. Check them and try again.",
+        channel,
         bankCode,
       };
     }
 
     return {
+      accountName: resolved.accountName.trim(),
+      accountNumber: resolved.accountNumber,
+      bankCode,
+      channel,
+    };
+  } catch (error) {
+    return {
       error:
         error instanceof PaystackError
           ? error.message
-          : "Could not check that number. Confirm it and try again.",
+          : "Could not check that account. Confirm the details and try again.",
+      channel,
+      bankCode,
     };
   }
 }
@@ -219,33 +278,66 @@ export async function savePayout(
 ): Promise<ActionState> {
   const vendor = await requireVendor();
 
-  const accountNumber = normaliseMomoAccountNumber(
-    String(formData.get("accountNumber") ?? ""),
-  );
+  const channel = parsePayoutChannel(formData.get("channel"));
   const bankCode = String(formData.get("bankCode") ?? "").trim();
+  const accountName = String(formData.get("accountName") ?? "").trim();
+  const returnTo = String(formData.get("returnTo") ?? "").trim();
 
-  if (!accountNumber || !bankCode) {
-    return { error: "Confirm your payout number first." };
+  if (!channel || !bankCode) {
+    return { error: "Confirm your payout account first." };
+  }
+  if (!accountName || accountName.startsWith("Unverified")) {
+    return {
+      error:
+        "Check the account first so we can show the registered name, then connect it.",
+    };
   }
 
+  const normalised = normalisePayoutAccount(
+    channel,
+    String(formData.get("accountNumber") ?? ""),
+  );
+  if (normalised.error || !normalised.accountNumber) {
+    return { error: normalised.error ?? "Confirm your payout account first." };
+  }
+
+  // Re-resolve at save time so a tampered form cannot skip name verification.
   try {
-    const subaccount = await createSubaccount({
+    const resolved = await resolveAccount(normalised.accountNumber, bankCode);
+    if (
+      !resolved.accountName?.trim() ||
+      resolved.accountName.trim().toLowerCase() !== accountName.toLowerCase()
+    ) {
+      return {
+        error:
+          "That account name no longer matches. Check the number again, then reconnect.",
+      };
+    }
+
+    const payload = {
       businessName: vendor.businessName,
       settlementBank: bankCode,
-      accountNumber,
+      accountNumber: normalised.accountNumber,
       percentageCharge: PLATFORM_FEE_PERCENT.goods,
       primaryContactPhone: vendor.whatsappNumber
         ? normaliseMomoAccountNumber(vendor.whatsappNumber)
         : undefined,
-    });
+    };
+
+    const subaccount = vendor.paystackSubaccountCode
+      ? await updateSubaccount(vendor.paystackSubaccountCode, payload)
+      : await createSubaccount(payload);
 
     const supabase = await createClient();
     const { error } = await supabase
       .from("vendors")
       .update({
         paystack_subaccount_code: subaccount.subaccountCode,
-        // Only stamp verified when Paystack already marks is_verified.
-        // Otherwise an admin must verify on the Paystack dashboard first.
+        payout_channel: channel,
+        payout_bank_code: bankCode,
+        payout_account_number: normalised.accountNumber,
+        payout_account_name: resolved.accountName.trim(),
+        // Changing settlement details usually needs re-verification on Paystack.
         payout_verified_at: subaccount.isVerified
           ? new Date().toISOString()
           : null,
@@ -260,8 +352,8 @@ export async function savePayout(
     ) {
       return {
         error:
-          isPaystackTestSecret()
-            ? `That number does not match ${bankCode}. Pick the right network, or use Paystack’s test pair: MTN + 055 123 4987.`
+          channel === "bank"
+            ? "Those bank details were rejected. Confirm the bank and account number."
             : `That number does not match ${bankCode}. Confirm the network and try again.`,
       };
     }
@@ -274,7 +366,7 @@ export async function savePayout(
     };
   }
 
-  redirect("/onboarding/drop");
+  redirect(returnTo === "more" ? "/dashboard/more" : "/onboarding/drop");
 }
 
 // Step 4 - first drop --------------------------------------------------------

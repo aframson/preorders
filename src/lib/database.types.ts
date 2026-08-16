@@ -726,6 +726,10 @@ export type Database = {
           created_at: string
           id: string
           logo_path: string | null
+          payout_account_name: string | null
+          payout_account_number: string | null
+          payout_bank_code: string | null
+          payout_channel: string | null
           payout_verified_at: string | null
           paystack_subaccount_code: string | null
           pickup_maps_url: string | null
@@ -739,6 +743,10 @@ export type Database = {
           created_at?: string
           id?: string
           logo_path?: string | null
+          payout_account_name?: string | null
+          payout_account_number?: string | null
+          payout_bank_code?: string | null
+          payout_channel?: string | null
           payout_verified_at?: string | null
           paystack_subaccount_code?: string | null
           pickup_maps_url?: string | null
@@ -752,6 +760,10 @@ export type Database = {
           created_at?: string
           id?: string
           logo_path?: string | null
+          payout_account_name?: string | null
+          payout_account_number?: string | null
+          payout_bank_code?: string | null
+          payout_channel?: string | null
           payout_verified_at?: string | null
           paystack_subaccount_code?: string | null
           pickup_maps_url?: string | null
