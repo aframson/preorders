@@ -33,7 +33,7 @@ export function BusinessForm({
     <StepShell
       step={2}
       title="Your business"
-      description="This is what customers see at the top of your link."
+      description="This is what customers see at the top of your link. Next you’ll connect payouts, then create your first drop — the shop page where batches of orders run."
     >
       <form action={submit} className="space-y-6">
         <Field

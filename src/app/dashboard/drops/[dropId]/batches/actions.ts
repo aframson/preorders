@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 
 import { requireVendor } from "@/lib/auth";
+import { finaliseBatchClose } from "@/lib/batches";
 import { cancelBatchCutoff, scheduleBatchCutoff, triggerStatusBroadcast } from "@/lib/jobs";
 import { requireVerifiedPayout } from "@/lib/payout-verification";
 import type { BatchStatus } from "@/lib/status";
@@ -223,13 +224,35 @@ export async function setBatchStatus(
 ): Promise<ActionState> {
   await requireVendor();
 
+  if (status === "closed") {
+    const result = await finaliseBatchClose(batchId);
+    const message = STATUS_EVENT.closed;
+    if (message) {
+      const { notifyBatchCustomers } = await import("@/lib/notify");
+      void notifyBatchCustomers(batchId, message, status).catch((error) =>
+        console.error("[notify] batch status", error),
+      );
+    }
+    await triggerStatusBroadcast(batchId, status);
+    revalidatePath(`/dashboard/drops/${dropId}/batches/${batchId}`);
+    if (result.openedBatchId) {
+      revalidatePath(
+        `/dashboard/drops/${dropId}/batches/${result.openedBatchId}`,
+      );
+    }
+    revalidatePath(`/dashboard/drops/${dropId}/batches`);
+    revalidatePath("/dashboard");
+    return {
+      message: result.openedBatchId
+        ? "Batch closed — the next batch is open with the same products"
+        : "Batch closed",
+    };
+  }
+
   const supabase = await createClient();
   const { error } = await supabase
     .from("batches")
-    .update({
-      status,
-      ...(status === "closed" ? { closed_at: new Date().toISOString() } : {}),
-    })
+    .update({ status })
     .eq("id", batchId);
 
   if (error) return { error: humaniseBatchError(error.message) };

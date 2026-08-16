@@ -91,7 +91,7 @@ export default async function PayoutStep({
       description={
         returnTo === "more"
           ? "Switch between mobile money and bank. We show the registered name before anything is saved."
-          : "Choose mobile money or a bank account. We show the registered name before you connect it."
+          : "Money from customers settles to you. After this, you’ll create your first drop — the shop link where batches of orders run."
       }
     />
   );

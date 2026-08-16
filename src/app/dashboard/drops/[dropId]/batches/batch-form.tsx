@@ -123,7 +123,8 @@ export function BatchForm({
             Open the next batch automatically
           </span>
           <span className="block text-ink-muted">
-            Your link keeps taking orders instead of going dead at cutoff.
+            When this batch closes, the next one opens with the same products so
+            your link never goes dead.
           </span>
         </span>
       </label>
