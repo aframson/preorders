@@ -31,8 +31,8 @@ export type CartLineInput = {
 
 /**
  * Same product + same options → one line with summed qty. Callers may send
- * duplicates (or we fold a new checkout into an unpaid order); pricing and
- * inserts must never create two rows for the same SKU.
+ * duplicates from the browser cart; pricing and inserts must never create two
+ * rows for the same SKU.
  */
 export function mergeCartLines(
   input: readonly CartLineInput[],
@@ -273,9 +273,10 @@ export type CreatedOrder = {
 /**
  * Creates a `pending_payment` order that holds its place for a day.
  *
- * Same customer (phone) checking out again on the same open batch merges into
- * their unpaid order: matching product + options increase qty instead of
- * creating another order code.
+ * Same customer (phone) checking out again on the same open batch reuses their
+ * unpaid order code, but the **submitted cart replaces** that order’s lines.
+ * The browser cart is the full order — merging again would double qty every
+ * time they hit Pay (and inflate the Paystack charge).
  *
  * The order does not count toward batch totals or the supplier manifest until
  * the payment webhook confirms it, so an abandoned checkout never inflates
@@ -337,13 +338,11 @@ export async function createOrder(
     throw new CheckoutError("Could not save your details. Try again.");
   }
 
-  // Same phone + same open batch + still unpaid → grow that order's counts
-  // instead of minting AFR-…-0002 for another pair of the same shoes.
+  // Same phone + same open batch + still unpaid → reuse that order row, but
+  // price only the cart they just submitted (do not add previous unpaid lines).
   const { data: pendingRows } = await admin
     .from("orders")
-    .select(
-      "id, code, public_token, hold_expires_at, order_items(id, product_id, variant_ids, qty, snapshot)",
-    )
+    .select("id, code, public_token, hold_expires_at")
     .eq("batch_id", input.batchId)
     .eq("customer_id", customer.id)
     .eq("status", "pending_payment")
@@ -355,29 +354,11 @@ export async function createOrder(
     pending?.hold_expires_at != null &&
     new Date(pending.hold_expires_at).getTime() > Date.now();
 
-  const existingLines: CartLineInput[] =
-    pending && holdStillValid
-      ? (pending.order_items ?? [])
-          .filter(
-            (item): item is typeof item & { product_id: string } =>
-              typeof item.product_id === "string",
-          )
-          .map((item) => {
-            const snapshot = item.snapshot as { imagePath?: string } | null;
-            return {
-              productId: item.product_id,
-              variantIds: item.variant_ids ?? [],
-              qty: item.qty,
-              imagePath: snapshot?.imagePath ?? null,
-            };
-          })
-      : [];
-
   const priced = await priceCart(
     input.dropId,
     input.freightMode,
     input.freightRateEstimate,
-    [...existingLines, ...input.lines],
+    input.lines,
   );
 
   const holdExpiresAt = new Date(Date.now() + HOLD_HOURS * 60 * 60 * 1000);
