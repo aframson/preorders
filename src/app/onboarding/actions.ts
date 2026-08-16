@@ -8,8 +8,8 @@ import { PLATFORM_FEE_PERCENT } from "@/lib/fees";
 import {
   createSubaccount,
   isPaystackConfigured,
+  isPaystackTestSecret,
   PaystackError,
-  paystackMode,
   resolveAccount,
 } from "@/lib/paystack";
 import { normaliseMomoAccountNumber, normalisePhone, isPlausibleGhanaPhone } from "@/lib/phone";
@@ -185,10 +185,9 @@ export async function resolvePayoutAccount(
     };
   }
 
-  // Resolve is built for bank accounts. Real MoMo numbers usually fail on
-  // test keys ("Could not resolve account name"). In test we confirm the
-  // number shape and let create-subaccount be the real check; live still
-  // prefers a successful resolve when Paystack can provide one.
+  // Resolve is built for bank accounts. Real MoMo numbers often fail on
+  // *test* keys ("Could not resolve account name"). Soft-pass only when the
+  // active secret is actually `sk_test_` — never when live keys are in use.
   try {
     const resolved = await resolveAccount(accountNumber, bankCode);
     return {
@@ -197,7 +196,7 @@ export async function resolvePayoutAccount(
       bankCode,
     };
   } catch (error) {
-    if (paystackMode() === "test") {
+    if (isPaystackTestSecret()) {
       return {
         accountName: `Unverified · check ${bankCode} matches this number`,
         accountNumber,
@@ -257,7 +256,7 @@ export async function savePayout(
     ) {
       return {
         error:
-          paystackMode() === "test"
+          isPaystackTestSecret()
             ? `That number does not match ${bankCode}. Pick the right network, or use Paystack’s test pair: MTN + 055 123 4987.`
             : `That number does not match ${bankCode}. Confirm the network and try again.`,
       };

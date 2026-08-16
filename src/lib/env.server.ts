@@ -19,7 +19,14 @@ const serverEnvSchema = z.object({
       1,
       "Set SUPABASE_SERVICE_ROLE_KEY (Supabase → Project Settings → API → service_role). Required on Vercel.",
     ),
-  PAYSTACK_MODE: z.enum(["test", "live"]).default("test"),
+  PAYSTACK_MODE: z.preprocess(
+    (value) => {
+      if (typeof value !== "string") return value;
+      // Vercel / .env sometimes store quoted or padded values.
+      return value.trim().replace(/^["']|["']$/g, "").toLowerCase();
+    },
+    z.enum(["test", "live"]).default("test"),
+  ),
   PAYSTACK_TEST_SECRET_KEY: z.string().optional(),
   PAYSTACK_TEST_PUBLIC_KEY: z.string().optional(),
   PAYSTACK_TEST_WEBHOOK_SECRET: z.string().optional(),
@@ -79,30 +86,48 @@ export type PaystackCredentials = {
   webhookSecret: string | null;
 };
 
-/** Active Paystack credentials for the configured mode. */
+/**
+ * Active Paystack credentials for the configured mode.
+ * If the selected secret is clearly live/test (`sk_live_` / `sk_test_`), that
+ * wins over a mismatched PAYSTACK_MODE — avoids prod showing test-only UX.
+ */
 export function paystackCredentials(): PaystackCredentials {
   const env = getServerEnv();
-  const mode = env.PAYSTACK_MODE;
+  let mode: PaystackMode = env.PAYSTACK_MODE;
+
+  const liveSecret =
+    emptyToNull(env.PAYSTACK_LIVE_SECRET_KEY) ??
+    (emptyToNull(env.PAYSTACK_SECRET_KEY)?.startsWith("sk_live_")
+      ? emptyToNull(env.PAYSTACK_SECRET_KEY)
+      : null);
+  const testSecret =
+    emptyToNull(env.PAYSTACK_TEST_SECRET_KEY) ??
+    (emptyToNull(env.PAYSTACK_SECRET_KEY)?.startsWith("sk_test_")
+      ? emptyToNull(env.PAYSTACK_SECRET_KEY)
+      : null);
+
+  if (mode === "live" && !liveSecret && testSecret) mode = "test";
+  if (mode === "test" && !testSecret && liveSecret) mode = "live";
 
   if (mode === "live") {
     const secretKey =
-      emptyToNull(env.PAYSTACK_LIVE_SECRET_KEY) ??
-      emptyToNull(env.PAYSTACK_SECRET_KEY);
-    return {
-      mode,
-      secretKey,
-      publicKey: emptyToNull(env.PAYSTACK_LIVE_PUBLIC_KEY),
-      webhookSecret:
-        emptyToNull(env.PAYSTACK_LIVE_WEBHOOK_SECRET) ??
-        emptyToNull(env.PAYSTACK_WEBHOOK_SECRET) ??
+      liveSecret ?? emptyToNull(env.PAYSTACK_SECRET_KEY);
+    if (secretKey?.startsWith("sk_test_")) {
+      mode = "test";
+    } else {
+      return {
+        mode: "live",
         secretKey,
-    };
+        publicKey: emptyToNull(env.PAYSTACK_LIVE_PUBLIC_KEY),
+        webhookSecret:
+          emptyToNull(env.PAYSTACK_LIVE_WEBHOOK_SECRET) ??
+          emptyToNull(env.PAYSTACK_WEBHOOK_SECRET) ??
+          secretKey,
+      };
+    }
   }
 
-  const secretKey =
-    emptyToNull(env.PAYSTACK_TEST_SECRET_KEY) ??
-    emptyToNull(env.PAYSTACK_SECRET_KEY);
-
+  const secretKey = testSecret ?? emptyToNull(env.PAYSTACK_SECRET_KEY);
   return {
     mode: "test",
     secretKey,

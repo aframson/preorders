@@ -32,6 +32,10 @@ export function paystackMode(): "test" | "live" {
   return paystackCredentials().mode;
 }
 
+export function isPaystackTestSecret(): boolean {
+  return Boolean(paystackCredentials().secretKey?.startsWith("sk_test_"));
+}
+
 type PaystackResponse<T> = { status: boolean; message: string; data: T };
 
 async function call<T>(
