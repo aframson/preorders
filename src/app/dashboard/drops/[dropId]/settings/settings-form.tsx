@@ -1,15 +1,16 @@
 "use client";
 
-import { Plus, X } from "lucide-react";
-import { useActionState } from "react";
+import { Plus, Trash2, X } from "lucide-react";
+import { useActionState, useTransition } from "react";
+import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { Field, Input, Select, Textarea } from "@/components/ui/field";
 import {
-  archiveDrop,
   createCategory,
   deleteCategory,
+  deleteDrop,
   updateDrop,
   type ActionState,
 } from "../../actions";
@@ -35,6 +36,19 @@ export function DropSettingsForm({
     ActionState,
     FormData
   >(createCategory, {});
+  const [deleting, startDelete] = useTransition();
+
+  function onDelete() {
+    const ok = confirm(
+      `Delete “${drop.title}”?\n\nThe public link is removed and open batches stop taking orders. Past orders stay in your records.`,
+    );
+    if (!ok) return;
+
+    startDelete(async () => {
+      const result = await deleteDrop(drop.id);
+      if (result?.error) toast.error(result.error);
+    });
+  }
 
   return (
     <div className="max-w-2xl space-y-6">
@@ -147,23 +161,20 @@ export function DropSettingsForm({
         </CardBody>
       </Card>
 
-      <Card>
+      <Card className="border-danger/25">
         <CardHeader
-          title="Archive this drop"
-          description="Hides the link and stops new orders. Existing orders are untouched."
+          title="Delete this drop"
+          description="Removes it from your dashboard and hides the public link. Open batches stop taking orders. Past orders are kept."
         />
         <CardBody>
           <Button
             type="button"
-            variant="secondary"
-            className="text-danger"
-            onClick={() => {
-              if (confirm("Archive this drop? The link stops taking orders.")) {
-                void archiveDrop(drop.id);
-              }
-            }}
+            variant="danger"
+            loading={deleting}
+            onClick={onDelete}
           >
-            Archive drop
+            <Trash2 className="size-4" aria-hidden />
+            Delete drop
           </Button>
         </CardBody>
       </Card>

@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 
 import { requireVendor } from "@/lib/auth";
+import { cancelBatchCutoff } from "@/lib/jobs";
 import { requireVerifiedPayout } from "@/lib/payout-verification";
 import { slugify } from "@/lib/site";
 import { createClient } from "@/lib/supabase/server";
@@ -113,17 +114,58 @@ export async function updateDrop(
   return { message: "Saved" };
 }
 
-export async function archiveDrop(dropId: string): Promise<void> {
-  await requireVendor();
-
+export async function deleteDrop(dropId: string): Promise<ActionState> {
+  const vendor = await requireVendor();
   const supabase = await createClient();
-  await supabase
+
+  const { data: drop } = await supabase
     .from("drops")
-    .update({ archived_at: new Date().toISOString(), published: false })
-    .eq("id", dropId);
+    .select("id")
+    .eq("id", dropId)
+    .eq("vendor_id", vendor.id)
+    .is("archived_at", null)
+    .maybeSingle();
+
+  if (!drop) return { error: "Drop not found." };
+
+  const now = new Date().toISOString();
+
+  // Stop any live batch from taking orders; do not auto-open a successor.
+  const { data: openBatches } = await supabase
+    .from("batches")
+    .select("id, cutoff_run_id")
+    .eq("drop_id", dropId)
+    .eq("status", "open");
+
+  for (const batch of openBatches ?? []) {
+    await cancelBatchCutoff(batch.cutoff_run_id);
+    await supabase
+      .from("batches")
+      .update({
+        status: "closed",
+        closed_at: now,
+        cutoff_run_id: null,
+        auto_open_next: false,
+      })
+      .eq("id", batch.id);
+  }
+
+  const { error } = await supabase
+    .from("drops")
+    .update({ archived_at: now, published: false })
+    .eq("id", dropId)
+    .eq("vendor_id", vendor.id);
+
+  if (error) return { error: error.message };
 
   revalidatePath("/dashboard/drops");
+  revalidatePath("/dashboard");
   redirect("/dashboard/drops");
+}
+
+/** @deprecated Prefer deleteDrop — soft-removes the drop from the dashboard. */
+export async function archiveDrop(dropId: string): Promise<void> {
+  await deleteDrop(dropId);
 }
 
 // Categories -----------------------------------------------------------------
