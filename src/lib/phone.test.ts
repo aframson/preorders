@@ -3,9 +3,28 @@ import { describe, expect, it } from "vitest";
 import {
   formatLocalPhone,
   guessMomoNetwork,
+  isPlausibleGhanaPhone,
   normaliseMomoAccountNumber,
   normalisePhone,
+  sanitisePhoneInput,
 } from "./phone";
+
+describe("sanitisePhoneInput", () => {
+  it("strips invisible characters pasted from WhatsApp", () => {
+    // U+202C POP DIRECTIONAL FORMATTING often trails copied Ghana numbers.
+    expect(sanitisePhoneInput("054 038 9039\u202C")).toBe("054 038 9039");
+    expect(sanitisePhoneInput("054\u00A0038\u00A09039")).toBe("054 038 9039");
+  });
+});
+
+describe("isPlausibleGhanaPhone", () => {
+  it("accepts common Ghana mobile shapes including paste junk", () => {
+    expect(isPlausibleGhanaPhone("054 038 9039")).toBe(true);
+    expect(isPlausibleGhanaPhone("054 038 9039\u202C")).toBe(true);
+    expect(isPlausibleGhanaPhone("+233540389039")).toBe(true);
+    expect(isPlausibleGhanaPhone("not a phone")).toBe(false);
+  });
+});
 
 describe("normalisePhone", () => {
   it("collapses every way a Ghanaian number gets typed into one value", () => {

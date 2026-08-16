@@ -3,8 +3,18 @@
  * are keyed on phone per vendor, so all three have to collapse to one value or
  * the same person becomes three customers.
  */
+
+/** Strip zero-width / bidi marks phones pick up when pasted from WhatsApp. */
+export function sanitisePhoneInput(input: string): string {
+  return input
+    .normalize("NFKC")
+    .replace(/[\u200B-\u200D\uFEFF\u202A-\u202E\u2060\u2066-\u2069]/g, "")
+    .replace(/\u00A0/g, " ")
+    .trim();
+}
+
 export function normalisePhone(input: string): string {
-  const digits = input.replace(/\D/g, "");
+  const digits = sanitisePhoneInput(input).replace(/\D/g, "");
 
   if (digits.startsWith("233")) return `+${digits}`;
   if (digits.startsWith("0")) return `+233${digits.slice(1)}`;
@@ -14,11 +24,27 @@ export function normalisePhone(input: string): string {
 }
 
 /**
+ * True for a Ghana mobile that will work as WhatsApp / MoMo after normalise.
+ * Accepts pasted junk; counts digits only.
+ */
+export function isPlausibleGhanaPhone(input: string): boolean {
+  const digits = sanitisePhoneInput(input).replace(/\D/g, "");
+  if (digits.startsWith("233")) {
+    return digits.length === 12 && /^233[235][0-9]\d{7}$/.test(digits);
+  }
+  if (digits.startsWith("0")) {
+    return digits.length === 10 && /^0[235][0-9]\d{7}$/.test(digits);
+  }
+  // 9 digits without leading 0 (24… / 54…)
+  return digits.length === 9 && /^[235][0-9]\d{7}$/.test(digits);
+}
+
+/**
  * Paystack MoMo APIs want a local 10-digit number (`0551234987`), not E.164
  * and not spaces.
  */
 export function normaliseMomoAccountNumber(input: string): string {
-  const digits = input.replace(/\D/g, "");
+  const digits = sanitisePhoneInput(input).replace(/\D/g, "");
 
   if (digits.startsWith("233") && digits.length >= 12) {
     return `0${digits.slice(3, 12)}`;

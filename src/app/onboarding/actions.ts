@@ -12,7 +12,7 @@ import {
   paystackMode,
   resolveAccount,
 } from "@/lib/paystack";
-import { normaliseMomoAccountNumber } from "@/lib/phone";
+import { normaliseMomoAccountNumber, normalisePhone, isPlausibleGhanaPhone } from "@/lib/phone";
 import { isReservedSlug, slugify } from "@/lib/site";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
@@ -34,8 +34,8 @@ const businessSchema = z.object({
     ),
   whatsappNumber: z
     .string()
-    .trim()
-    .regex(/^[\d\s+()-]{9,20}$/, "Enter a valid WhatsApp number"),
+    .transform((value) => normalisePhone(value))
+    .refine(isPlausibleGhanaPhone, "Enter a valid WhatsApp number"),
 });
 
 export async function saveBusiness(

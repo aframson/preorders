@@ -10,6 +10,7 @@ import {
   startGoodsPayment,
 } from "@/lib/payments";
 import { isPaystackConfigured } from "@/lib/paystack";
+import { isPlausibleGhanaPhone, normalisePhone } from "@/lib/phone";
 import { getPublicDrop } from "@/lib/queries/public-drop";
 import { orderPath } from "@/lib/site";
 
@@ -35,8 +36,8 @@ const checkoutSchema = z
     name: z.string().trim().min(2, "Enter your name"),
     phone: z
       .string()
-      .trim()
-      .regex(/^[\d\s()+-]{9,17}$/, "Enter a valid phone number"),
+      .transform((value) => normalisePhone(value))
+      .refine(isPlausibleGhanaPhone, "Enter a valid phone number"),
     email: z.email("Enter a valid email address"),
     fulfilment: z.enum(["pickup", "delivery"]),
     deliveryNote: z.string().trim().max(2000).nullable(),
