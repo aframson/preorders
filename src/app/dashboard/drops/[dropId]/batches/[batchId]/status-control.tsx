@@ -31,6 +31,12 @@ const NEXT_STEP: Partial<
     confirm:
       "Mark this batch complete? Use this when every customer has paid shipping.",
   },
+  arrived: {
+    status: "settled",
+    label: "Mark batch complete",
+    confirm:
+      "Mark this batch complete? Use this when every customer has paid shipping.",
+  },
 };
 
 export function StatusControl({
@@ -82,6 +88,7 @@ export function StatusControl({
   const next = NEXT_STEP[status];
   if (!next) return null;
   if (status === "freight_invoiced" && !canSettle) return null;
+  if (status === "arrived" && !canSettle) return null;
 
   return (
     <div className="space-y-2">

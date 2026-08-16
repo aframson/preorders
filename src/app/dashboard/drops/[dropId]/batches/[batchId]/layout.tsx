@@ -23,9 +23,9 @@ export default async function BatchLayout({
   if (!batch) notFound();
 
   // Heal batches that stayed on "Shipping invoiced" after everyone paid.
-  if (batch.status === "freight_invoiced") {
+  if (batch.status === "freight_invoiced" || batch.status === "arrived") {
     const healed = await settleBatchIfFreightComplete(batchId);
-    if (healed) {
+    if (healed === "settled" || healed === "already_settled") {
       batch = (await getBatchDetail(batchId)) ?? batch;
     }
   }
@@ -72,7 +72,10 @@ export default async function BatchLayout({
             dropId={dropId}
             status={batch.status}
             canSettle={
-              batch.status === "freight_invoiced" && stats.awaitingFreight === 0
+              (batch.status === "freight_invoiced" ||
+                batch.status === "arrived") &&
+              stats.awaitingFreight === 0 &&
+              Boolean(batch.freightFinalisedAt)
             }
           />
         </div>

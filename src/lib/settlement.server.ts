@@ -111,16 +111,24 @@ export async function finaliseFreight(params: {
  */
 export async function settleBatchIfFreightComplete(
   batchId: string,
-): Promise<boolean> {
+): Promise<"settled" | "already_settled" | "not_ready"> {
   const admin = createAdminClient();
 
   const { data: batch } = await admin
     .from("batches")
-    .select("id, status")
+    .select("id, status, freight_finalised_at")
     .eq("id", batchId)
     .maybeSingle();
 
-  if (!batch || batch.status !== "freight_invoiced") return false;
+  if (!batch) return "not_ready";
+  if (batch.status === "settled") return "already_settled";
+
+  // Invoicing writes freight_invoiced; older/partial rows may still sit on
+  // arrived with a finalised bill. Both are eligible to complete.
+  const eligible =
+    batch.status === "freight_invoiced" ||
+    (batch.status === "arrived" && Boolean(batch.freight_finalised_at));
+  if (!eligible) return "not_ready";
 
   const { data: orders } = await admin
     .from("orders")
@@ -130,7 +138,7 @@ export async function settleBatchIfFreightComplete(
     .neq("status", "pending_payment");
 
   const shipping = orders ?? [];
-  if (shipping.length === 0) return false;
+  if (shipping.length === 0) return "not_ready";
 
   const allFreightPaid = shipping.every(
     (order) =>
@@ -139,17 +147,25 @@ export async function settleBatchIfFreightComplete(
       order.status === "collected",
   );
 
-  if (!allFreightPaid) return false;
+  if (!allFreightPaid) return "not_ready";
 
   const { data: updated } = await admin
     .from("batches")
     .update({ status: "settled" })
     .eq("id", batchId)
-    .eq("status", "freight_invoiced")
+    .in("status", ["freight_invoiced", "arrived"])
     .select("id")
     .maybeSingle();
 
-  if (!updated) return false;
+  if (!updated) {
+    // Lost a race to another settle — treat as done if we landed on settled.
+    const { data: again } = await admin
+      .from("batches")
+      .select("status")
+      .eq("id", batchId)
+      .maybeSingle();
+    return again?.status === "settled" ? "already_settled" : "not_ready";
+  }
 
   await admin.from("batch_events").insert({
     batch_id: batchId,
@@ -158,7 +174,7 @@ export async function settleBatchIfFreightComplete(
     is_public: true,
   });
 
-  return true;
+  return "settled";
 }
 
 export { SettlementError };

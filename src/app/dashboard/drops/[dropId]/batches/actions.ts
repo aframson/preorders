@@ -8,7 +8,6 @@ import { requireVendor } from "@/lib/auth";
 import { finaliseBatchClose } from "@/lib/batches";
 import { cancelBatchCutoff, scheduleBatchCutoff, triggerStatusBroadcast } from "@/lib/jobs";
 import { requireVerifiedPayout } from "@/lib/payout-verification";
-import { getBatchDetail, shippingOrders } from "@/lib/queries/batch";
 import type { BatchStatus } from "@/lib/status";
 import { createClient } from "@/lib/supabase/server";
 import { fromAccraInputValue } from "@/lib/time";
@@ -254,19 +253,36 @@ export async function setBatchStatus(
   const supabase = await createClient();
 
   if (status === "settled") {
-    const batch = await getBatchDetail(batchId);
-    if (!batch) return { error: "Batch not found." };
-    if (batch.status !== "freight_invoiced") {
-      return { error: "This batch is not ready to mark complete." };
-    }
-    const unpaid = shippingOrders(batch).some(
-      (order) => order.freightInvoicedAt && !order.freightPaidAt,
+    const { settleBatchIfFreightComplete } = await import(
+      "@/lib/settlement.server"
     );
-    if (unpaid) {
+    const result = await settleBatchIfFreightComplete(batchId);
+    if (result === "not_ready") {
       return {
-        error: "Some customers still owe shipping. Collect those first.",
+        error:
+          "Some customers still owe shipping, or this batch is not ready to complete yet.",
       };
     }
+
+    if (result === "settled") {
+      const message = STATUS_EVENT.settled;
+      if (message) {
+        const { notifyBatchCustomers } = await import("@/lib/notify");
+        void notifyBatchCustomers(batchId, message, status).catch((error) =>
+          console.error("[notify] batch status", error),
+        );
+      }
+      await triggerStatusBroadcast(batchId, status);
+    }
+
+    revalidatePath(`/dashboard/drops/${dropId}/batches/${batchId}`);
+    revalidatePath("/dashboard");
+    return {
+      message:
+        result === "already_settled"
+          ? "Batch is already complete"
+          : "Batch marked complete",
+    };
   }
 
   const { error } = await supabase
