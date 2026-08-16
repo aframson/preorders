@@ -5,7 +5,12 @@ import { useActionState, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Field, Input } from "@/components/ui/field";
 import { MoneyRow } from "@/components/ui/money-row";
-import { FREIGHT_MODES, allocateFreight, formatBillableUnits, type FreightMode } from "@/lib/freight";
+import {
+  FREIGHT_MODES,
+  allocateFreight,
+  formatBillableUnits,
+  type FreightMode,
+} from "@/lib/freight";
 import { cedisToPesewas, formatGhs, type Pesewas } from "@/lib/money";
 import { sendFreightInvoices, type FreightState } from "./actions";
 
@@ -23,6 +28,8 @@ export function FreightForm({
   freightMode,
   unitsTotal,
   alreadyFinalised,
+  canRevise,
+  initialChargeCedis,
   rows,
 }: {
   batchId: string;
@@ -30,9 +37,13 @@ export function FreightForm({
   freightMode: FreightMode;
   unitsTotal: number;
   alreadyFinalised: boolean;
+  /** True when invoices were sent but nobody has paid yet. */
+  canRevise: boolean;
+  initialChargeCedis: string;
   rows: Row[];
 }) {
-  const [chargeCedis, setChargeCedis] = useState("");
+  const locked = alreadyFinalised && !canRevise;
+  const [chargeCedis, setChargeCedis] = useState(initialChargeCedis);
   const [costCedis, setCostCedis] = useState("");
   const [state, action, pending] = useActionState<FreightState, FormData>(
     sendFreightInvoices,
@@ -82,7 +93,7 @@ export function FreightForm({
             placeholder="0.00"
             value={chargeCedis}
             onChange={(event) => setChargeCedis(event.target.value)}
-            disabled={alreadyFinalised}
+            disabled={locked}
           />
         </Field>
 
@@ -101,7 +112,7 @@ export function FreightForm({
             placeholder="0.00"
             value={costCedis}
             onChange={(event) => setCostCedis(event.target.value)}
-            disabled={alreadyFinalised}
+            disabled={locked}
           />
         </Field>
       </div>
@@ -125,8 +136,11 @@ export function FreightForm({
         </div>
       )}
 
-      {jump && (
-        <p role="status" className="rounded-card border border-closing/30 bg-closing-tint px-4 py-3 text-sm text-ink">
+      {jump && !locked && (
+        <p
+          role="status"
+          className="rounded-card border border-closing/30 bg-closing-tint px-4 py-3 text-sm text-ink"
+        >
           This is a lot higher than the estimates customers saw at checkout.
           They will notice. Confirm the figure before you send.
         </p>
@@ -145,7 +159,10 @@ export function FreightForm({
             </thead>
             <tbody>
               {allocation.map((row) => (
-                <tr key={row.orderId} className="border-b border-border last:border-0">
+                <tr
+                  key={row.orderId}
+                  className="border-b border-border last:border-0"
+                >
                   <td className="px-4 py-3">
                     <p className="font-medium text-ink">{row.customerName}</p>
                     <p className="text-xs text-ink-subtle" data-numeric>
@@ -179,7 +196,7 @@ export function FreightForm({
         </p>
       )}
 
-      {!alreadyFinalised && (
+      {!locked && (
         <Button
           type="submit"
           size="lg"
@@ -187,7 +204,9 @@ export function FreightForm({
           loading={pending}
           disabled={charge <= 0 || rows.length === 0}
         >
-          Send {rows.length} shipping invoice{rows.length === 1 ? "" : "s"}
+          {canRevise
+            ? `Update ${rows.length} shipping invoice${rows.length === 1 ? "" : "s"}`
+            : `Send ${rows.length} shipping invoice${rows.length === 1 ? "" : "s"}`}
         </Button>
       )}
     </form>

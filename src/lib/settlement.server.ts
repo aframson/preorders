@@ -15,8 +15,9 @@ import type { Pesewas } from "@/lib/money";
  * and marks the batch as invoiced. Always recomputes from scratch so a
  * correction never leaves leftover pesewas on the table.
  *
- * Refuses to run a second time once any customer has paid their share: those
- * amounts are already in the world and cannot be silently rewritten.
+ * Safe to run again while invoices are unpaid (vendor corrected the bill).
+ * Refuses once any customer has paid their share: those amounts are already
+ * in the world and cannot be silently rewritten.
  */
 export async function finaliseFreight(params: {
   batchId: string;
@@ -42,8 +43,20 @@ export async function finaliseFreight(params: {
     throw new SettlementError("There are no paid orders to split shipping across.");
   }
 
+  const revising = Boolean(batch.freightFinalisedAt);
   const now = new Date().toISOString();
   const admin = createAdminClient();
+
+  // Old Paystack freight checkouts must not settle against a revised amount.
+  if (revising) {
+    const orderIds = preview.rows.map((row) => row.orderId);
+    await admin
+      .from("payments")
+      .update({ status: "failed" })
+      .eq("type", "freight")
+      .eq("status", "pending")
+      .in("order_id", orderIds);
+  }
 
   const { error: batchError } = await admin
     .from("batches")
@@ -75,7 +88,10 @@ export async function finaliseFreight(params: {
   await admin.from("batch_events").insert({
     batch_id: params.batchId,
     type: "freight_invoiced",
-    message: "Shipping has been calculated. Pay your share to collect your goods.",
+    message: revising
+      ? "Shipping amount was updated. Pay the new share to collect your goods."
+      : "Shipping has been calculated. Pay your share to collect your goods.",
+    is_public: true,
   });
 
   await triggerFreightInvoices(params.batchId);

@@ -49,7 +49,9 @@ export async function sendFreightInvoices(
     revalidatePath("/dashboard/money");
 
     return {
-      message: `Sent ${preview.rows.length} shipping invoice${preview.rows.length === 1 ? "" : "s"}.`,
+      message: preview.alreadyFinalised
+        ? `Updated ${preview.rows.length} shipping invoice${preview.rows.length === 1 ? "" : "s"}. Customers are notified of the new amount.`
+        : `Sent ${preview.rows.length} shipping invoice${preview.rows.length === 1 ? "" : "s"}.`,
     };
   } catch (error) {
     return {

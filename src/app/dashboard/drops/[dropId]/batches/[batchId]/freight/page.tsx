@@ -38,6 +38,13 @@ export default async function FreightPage({
     null,
   );
 
+  const someonePaid = shipping.some((order) => order.freightPaidAt);
+  const canRevise = Boolean(batch.freightFinalisedAt) && !someonePaid;
+  const initialChargeCedis =
+    batch.freightTotalActual !== null && batch.freightTotalActual > 0
+      ? (batch.freightTotalActual / 100).toFixed(2)
+      : "";
+
   return (
     <div className="max-w-3xl space-y-6">
       <div>
@@ -52,10 +59,18 @@ export default async function FreightPage({
       </div>
 
       {batch.freightFinalisedAt && batch.freightTotalActual !== null && (
-        <p className="rounded-card border border-open/30 bg-open-tint px-4 py-3 text-sm text-ink">
-          Invoices already sent for {formatGhs(batch.freightTotalActual)} across{" "}
-          {formatBillableUnits(batch.freightMode, preview.unitsTotal)}. Unpaid
-          orders stay held until the customer pays.
+        <p
+          className={
+            someonePaid
+              ? "rounded-card border border-border bg-surface-muted px-4 py-3 text-sm text-ink"
+              : "rounded-card border border-open/30 bg-open-tint px-4 py-3 text-sm text-ink"
+          }
+        >
+          Invoices sent for {formatGhs(batch.freightTotalActual)} across{" "}
+          {formatBillableUnits(batch.freightMode, preview.unitsTotal)}.
+          {someonePaid
+            ? " At least one customer has paid, so the split is locked."
+            : " Nobody has paid yet — you can still edit the total and resend."}
         </p>
       )}
 
@@ -65,6 +80,8 @@ export default async function FreightPage({
         freightMode={batch.freightMode}
         unitsTotal={preview.unitsTotal}
         alreadyFinalised={Boolean(batch.freightFinalisedAt)}
+        canRevise={canRevise}
+        initialChargeCedis={initialChargeCedis}
         rows={preview.rows.map((row) => ({
           orderId: row.orderId,
           code: row.code,
