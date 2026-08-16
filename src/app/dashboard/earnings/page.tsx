@@ -53,10 +53,10 @@ export default async function EarningsPage() {
               How cash-out works
             </h2>
             <p className="mt-1 text-sm text-ink-muted">
-              There is no separate wallet to withdraw. When a customer pays for
-              goods, Paystack sends your share straight to the mobile money
-              number you connected. Shipping payments are pass-through — the full
-              amount lands with you, with no platform fee.
+              There is no Preorders wallet to withdraw. Customer payments go to
+              Paystack first; your share is then settled to the MoMo or bank
+              account you connected — after Paystack verifies the subaccount and
+              on their Ghana schedule (next working day).
             </p>
           </div>
         </div>
@@ -64,15 +64,15 @@ export default async function EarningsPage() {
         <ol className="space-y-4 border-t border-border pt-4">
           <Step
             icon={Smartphone}
-            title="1. Connect mobile money"
+            title="1. Connect payouts"
             body={
               connected
                 ? `Payouts are connected${
                     vendor.payoutVerifiedAt
-                      ? ` since ${formatAccraDateTime(vendor.payoutVerifiedAt)}`
-                      : ""
-                  }. Change the number anytime under More → Payments.`
-                : "Link MTN, Vodafone, or AirtelTigo MoMo so Paystack knows where to settle."
+                      ? ` (verified ${formatAccraDateTime(vendor.payoutVerifiedAt)})`
+                      : " — still waiting for Paystack admin verification"
+                  }. Change details anytime under More → Payments.`
+                : "Link MTN / Telecel / AirtelTigo MoMo or a bank account so Paystack knows where to settle."
             }
             action={
               connected ? (
@@ -89,12 +89,12 @@ export default async function EarningsPage() {
           <Step
             icon={Banknote}
             title="2. Customer pays"
-            body={`On each goods payment we keep ${PLATFORM_FEE_PERCENT.goods}% and Paystack settles the rest to your MoMo. Shipping invoices settle at 100% to you.`}
+            body={`On each goods payment we keep ${PLATFORM_FEE_PERCENT.goods}% on Paystack; the rest is earmarked for your subaccount. Shipping invoices settle at 100% to you.`}
           />
           <Step
             icon={Wallet}
-            title="3. Money arrives on MoMo"
-            body="Settlement follows Paystack’s MoMo timing (often same day in test/live once the charge succeeds). Check your MoMo balance and SMS — we do not hold a withdrawable balance inside Preorders."
+            title="3. Paystack pays out to MoMo / bank"
+            body="Ghana settlements are next working day (not weekends/holidays). The first payout to a new or updated subaccount is held until you verify that subaccount in the Paystack dashboard — then it pays out on the next working day."
           />
         </ol>
       </section>
