@@ -1,17 +1,14 @@
 import { AlertTriangle, PackagePlus, Plus } from "lucide-react";
-import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-import { AvailabilityTag } from "@/components/product-availability-tag";
+import { SearchableProductGrid } from "@/components/dashboard/searchable-product-grid";
 import { ButtonLink } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { cn } from "@/lib/cn";
 import { requireVendor } from "@/lib/auth";
-import { FREIGHT_MODES, type FreightMode } from "@/lib/freight";
-import { formatGhsCompact } from "@/lib/money";
+import type { FreightMode } from "@/lib/freight";
 import type { ProductAvailability } from "@/lib/product-availability";
-import { BUCKETS, publicUrl } from "@/lib/storage";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata = { title: "Products" };
@@ -56,9 +53,6 @@ export default async function DropProductsPage({
     ? (products ?? []).filter((product) => product.category_id === activeCategory)
     : (products ?? []);
 
-  // The batch cannot open while any published product is missing the
-  // measurement its freight mode needs, so surface it here rather than at the
-  // moment the vendor tries to open.
   const unmeasured = (products ?? []).filter(
     (product) =>
       product.published &&
@@ -66,6 +60,22 @@ export default async function DropProductsPage({
         ? product.weight_grams === null
         : product.volume_cm3 === null),
   );
+
+  const cards = visible.map((product) => {
+    const cover = [...(product.product_images ?? [])].sort(
+      (a, b) => a.position - b.position,
+    )[0];
+    return {
+      id: product.id,
+      name: product.name,
+      price: product.price,
+      published: product.published,
+      weightGrams: product.weight_grams,
+      volumeCm3: product.volume_cm3,
+      availability: product.availability as ProductAvailability,
+      coverPath: cover?.storage_path ?? null,
+    };
+  });
 
   return (
     <>
@@ -106,15 +116,22 @@ export default async function DropProductsPage({
         </div>
       )}
 
-      {visible.length === 0 ? (
+      {products?.length === 0 ? (
         <EmptyState
           icon={PackagePlus}
-          title={activeCategory ? "Nothing in this category" : "No products yet"}
-          description={
-            activeCategory
-              ? "Move a product into this category, or pick another one."
-              : "Add three or four products to start. You can always add more while the batch is open."
+          title="No products yet"
+          description="Add three or four products to start. You can always add more while the batch is open."
+          action={
+            <ButtonLink href={`/dashboard/drops/${dropId}/products/new`}>
+              Add a product
+            </ButtonLink>
           }
+        />
+      ) : visible.length === 0 ? (
+        <EmptyState
+          icon={PackagePlus}
+          title="Nothing in this category"
+          description="Move a product into this category, or pick another one."
           action={
             <ButtonLink href={`/dashboard/drops/${dropId}/products/new`}>
               Add a product
@@ -122,82 +139,9 @@ export default async function DropProductsPage({
           }
         />
       ) : (
-        <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-          {visible.map((product) => {
-            const cover = [...(product.product_images ?? [])].sort(
-              (a, b) => a.position - b.position,
-            )[0];
-
-            const measurement =
-              mode === "air_kg" ? product.weight_grams : product.volume_cm3;
-            const measurementLabel =
-              measurement === null
-                ? null
-                : mode === "air_kg"
-                  ? `${(measurement / 1000).toFixed(2)} kg`
-                  : `${(measurement / 1_000_000).toFixed(3)} ${FREIGHT_MODES.sea_cbm.unitLabel}`;
-
-            return (
-              <li key={product.id}>
-                <Link
-                  href={`/dashboard/drops/${dropId}/products/${product.id}`}
-                  className="group block"
-                >
-                  <div className="relative aspect-4/5 overflow-hidden rounded-card border border-border bg-surface-muted">
-                    {cover ? (
-                      <Image
-                        src={publicUrl(BUCKETS.productImages, cover.storage_path)}
-                        alt=""
-                        fill
-                        sizes="(min-width: 1024px) 25vw, (min-width: 640px) 33vw, 50vw"
-                        className="object-cover transition-opacity group-hover:opacity-90"
-                      />
-                    ) : (
-                      <div className="flex size-full items-center justify-center text-ink-subtle">
-                        <PackagePlus className="size-6" aria-hidden />
-                      </div>
-                    )}
-
-                    <AvailabilityTag
-                      availability={
-                        product.availability as ProductAvailability
-                      }
-                    />
-
-                    {measurementLabel === null && (
-                      <span className="absolute top-9 left-2 flex items-center gap-1 rounded-full bg-closing px-2 py-0.5 text-[10px] font-medium text-white">
-                        <AlertTriangle className="size-3" aria-hidden />
-                        No {mode === "air_kg" ? "weight" : "volume"}
-                      </span>
-                    )}
-
-                    {!product.published && (
-                      <span className="absolute top-2 right-2 rounded-full bg-ink/80 px-2 py-0.5 text-[10px] font-medium text-white">
-                        Hidden
-                      </span>
-                    )}
-                  </div>
-
-                  <p className="mt-2 truncate text-sm font-medium text-ink">
-                    {product.name}
-                  </p>
-                  <p className="text-sm text-ink-muted" data-numeric>
-                    {formatGhsCompact(product.price)}
-                    {measurementLabel && (
-                      <span className="text-ink-subtle"> &middot; {measurementLabel}</span>
-                    )}
-                  </p>
-                </Link>
-              </li>
-            );
-          })}
-        </ul>
+        <SearchableProductGrid dropId={dropId} mode={mode} products={cards} />
       )}
 
-      {/*
-        Plain Link, not ButtonLink: the button base ships `relative` + grain
-        overlays that fight a viewport FAB. Keep this pinned to the corner.
-      */}
       <Link
         href={`/dashboard/drops/${dropId}/products/new`}
         aria-label="Add product"

@@ -1,7 +1,7 @@
 import { Inbox } from "lucide-react";
 import { notFound } from "next/navigation";
 
-import { VendorOrderRow } from "@/components/dashboard/vendor-order-row";
+import { SearchableOrders } from "@/components/dashboard/searchable-orders";
 import { EmptyState } from "@/components/ui/empty-state";
 import { requireVendor } from "@/lib/auth";
 import { getBatchDetail } from "@/lib/queries/batch";
@@ -32,25 +32,20 @@ export default async function BatchOrdersPage({
   }
 
   return (
-    <ul className="space-y-3">
-      {batch.orders.map((order) => (
-        <VendorOrderRow
-          key={order.id}
-          order={{
-            id: order.id,
-            code: order.code,
-            publicToken: order.publicToken,
-            status: order.status,
-            fulfilment: order.fulfilment,
-            goodsTotal: order.goodsTotal,
-            createdAt: order.createdAt,
-            customerName: order.customer.name,
-            phone: order.customer.phone,
-            dropTitle: batch.dropTitle,
-            batchNumber: batch.number,
-          }}
-        />
-      ))}
-    </ul>
+    <SearchableOrders
+      orders={batch.orders.map((order) => ({
+        id: order.id,
+        code: order.code,
+        publicToken: order.publicToken,
+        status: order.status,
+        fulfilment: order.fulfilment,
+        goodsTotal: order.goodsTotal,
+        createdAt: order.createdAt,
+        customerName: order.customer.name,
+        phone: order.customer.phone,
+        dropTitle: batch.dropTitle,
+        batchNumber: batch.number,
+      }))}
+    />
   );
 }

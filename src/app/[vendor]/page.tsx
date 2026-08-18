@@ -1,18 +1,12 @@
 import type { Metadata } from "next";
-import { Layers, MessageCircle } from "lucide-react";
-import Image from "next/image";
-import Link from "next/link";
+import { MessageCircle } from "lucide-react";
 import { notFound } from "next/navigation";
 
+import { SearchableVendorDrops } from "@/components/public/searchable-vendor-drops";
 import { VendorHeader } from "@/components/public/vendor-header";
-import { EmptyState } from "@/components/ui/empty-state";
 import { StarRow } from "@/components/ui/star-row";
-import { StatusPill } from "@/components/ui/status-pill";
 import { getPublicVendor } from "@/lib/queries/public-vendor";
-import { dropPath, vendorPath, whatsappChatLink } from "@/lib/site";
-import { BATCH_STATUS, batchTone } from "@/lib/status";
-import { BUCKETS, publicUrl } from "@/lib/storage";
-import { formatAccraDateTime } from "@/lib/time";
+import { vendorPath, whatsappChatLink } from "@/lib/site";
 
 export async function generateMetadata({
   params,
@@ -89,86 +83,11 @@ export default async function PublicVendorPage({
           Each link is a running preorder. Open one to pick and pay.
         </p>
 
-        {drops.length === 0 ? (
-          <div className="mt-8">
-            <EmptyState
-              icon={Layers}
-              title="Nothing open yet"
-              description={`${vendor.businessName} has not published a batch link yet.`}
-            />
-          </div>
-        ) : (
-          <ul className="mt-5 space-y-3">
-            {drops.map((drop) => {
-              const live = drop.openBatch;
-              const upcoming = drop.nextBatch;
-              const href = dropPath(vendor.slug, drop.slug);
-              const tone = live
-                ? batchTone("open", new Date(live.closesAt))
-                : upcoming
-                  ? "neutral"
-                  : "closed";
-
-              return (
-                <li key={drop.id}>
-                  <Link
-                    href={href}
-                    className="flex gap-3 overflow-hidden rounded-card border border-border bg-surface transition-colors hover:border-brand-300"
-                  >
-                    <div className="relative w-24 shrink-0 self-stretch bg-surface-muted sm:w-28">
-                      {drop.coverPath ? (
-                        <Image
-                          src={publicUrl(BUCKETS.vendorAssets, drop.coverPath)}
-                          alt=""
-                          fill
-                          sizes="112px"
-                          className="object-cover"
-                        />
-                      ) : (
-                        <div className="absolute inset-0 flex items-center justify-center text-ink-subtle">
-                          <Layers className="size-5" aria-hidden />
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="min-w-0 flex-1 py-3 pr-3">
-                      <div className="flex items-start justify-between gap-2">
-                        <h3 className="truncate font-display text-base font-semibold text-ink">
-                          {drop.title}
-                        </h3>
-                        <StatusPill tone={tone} pulse={tone === "closing"}>
-                          {live
-                            ? BATCH_STATUS.open.publicLabel
-                            : upcoming
-                              ? BATCH_STATUS.scheduled.publicLabel
-                              : "Closed"}
-                        </StatusPill>
-                      </div>
-
-                      {drop.description && (
-                        <p className="mt-1 line-clamp-2 text-sm text-ink-muted">
-                          {drop.description}
-                        </p>
-                      )}
-
-                      <p className="mt-2 text-xs text-ink-subtle">
-                        {live
-                          ? `Batch ${live.number} · closes ${formatAccraDateTime(live.closesAt)}${
-                              live.orderCount > 0
-                                ? ` · ${live.orderCount} orders in`
-                                : ""
-                            }`
-                          : upcoming
-                            ? `Batch ${upcoming.number} opens ${formatAccraDateTime(upcoming.opensAt)}`
-                            : "The next batch has not been scheduled yet."}
-                      </p>
-                    </div>
-                  </Link>
-                </li>
-              );
-            })}
-          </ul>
-        )}
+        <SearchableVendorDrops
+          vendorSlug={vendor.slug}
+          businessName={vendor.businessName}
+          drops={drops}
+        />
       </main>
 
       <footer className="mx-auto w-full max-w-3xl px-5 py-8">

@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { MessageCircle, PackageOpen } from "lucide-react";
+import { MessageCircle } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
@@ -9,9 +9,8 @@ import {
 } from "@/components/public/batch-banner";
 import { CartBar } from "@/components/public/cart";
 import { NotifyMeForm } from "@/components/public/notify-me-form";
-import { ProductCard } from "@/components/public/product-card";
+import { PublicProductCatalog } from "@/components/public/public-product-catalog";
 import { VendorHeader } from "@/components/public/vendor-header";
-import { EmptyState } from "@/components/ui/empty-state";
 import { cn } from "@/lib/cn";
 import { getPublicDrop } from "@/lib/queries/public-drop";
 import { dropPath, vendorPath, whatsappChatLink } from "@/lib/site";
@@ -112,34 +111,23 @@ export default async function PublicDropPage({
           questionsHref ? "pb-48" : "pb-8",
         )}
       >
-        {visible.length === 0 ? (
-          <div className="px-5 py-10">
-            <EmptyState
-              icon={PackageOpen}
-              title={
-                activeCategory ? "Nothing in this category" : "Nothing here yet"
-              }
-              description={
-                activeCategory
-                  ? "Try another category."
-                  : `${vendor.businessName} has not added products to this link yet.`
-              }
-            />
-          </div>
-        ) : (
-          <ul className="grid grid-cols-2 gap-x-3 gap-y-6 px-5 py-5 sm:grid-cols-3">
-            {visible.map((product) => (
-              <li key={product.id}>
-                <ProductCard
-                  product={product}
-                  href={`${base}/p/${product.id}`}
-                  freightMode={openBatch?.freightMode ?? "sea_cbm"}
-                  freightRateEstimate={openBatch?.freightRateEstimate ?? 0}
-                />
-              </li>
-            ))}
-          </ul>
-        )}
+        <PublicProductCatalog
+          products={visible}
+          base={base}
+          freightMode={openBatch?.freightMode ?? "sea_cbm"}
+          freightRateEstimate={openBatch?.freightRateEstimate ?? 0}
+          categoryNames={Object.fromEntries(
+            categories.map((category) => [category.id, category.name]),
+          )}
+          emptyTitle={
+            activeCategory ? "Nothing in this category" : "Nothing here yet"
+          }
+          emptyDescription={
+            activeCategory
+              ? "Try another category."
+              : `${vendor.businessName} has not added products to this link yet.`
+          }
+        />
 
         {!questionsHref && (
           <p className="px-5 pt-4 text-center text-xs text-ink-subtle">

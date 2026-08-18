@@ -19,6 +19,7 @@ import {
 } from "@/components/marketing/feature-mockups";
 import { HeroChatStage } from "@/components/marketing/hero-chat-stage";
 import { ManifestComparison } from "@/components/marketing/manifest-comparison";
+import { VendorSearch } from "@/components/marketing/vendor-search";
 import { WhatsAppUnfurl } from "@/components/marketing/whatsapp-unfurl";
 import { ButtonLink } from "@/components/ui/button";
 import { Container } from "@/components/ui/container";
@@ -143,7 +144,11 @@ export default function HomePage() {
               and shipping split by weight when the bill arrives.
             </p>
 
-            <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+            <div className="mt-8">
+              <VendorSearch />
+            </div>
+
+            <div className="mt-5 flex flex-col gap-3 sm:flex-row">
               <ButtonLink href="/onboarding" size="lg">
                 Create your batch link
                 <ArrowRight className="size-4" aria-hidden />

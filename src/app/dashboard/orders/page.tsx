@@ -1,6 +1,6 @@
 import { Receipt } from "lucide-react";
 
-import { VendorOrderRow } from "@/components/dashboard/vendor-order-row";
+import { SearchableOrders } from "@/components/dashboard/searchable-orders";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { EmptyState } from "@/components/ui/empty-state";
 import { requireVendor } from "@/lib/auth";
@@ -55,11 +55,7 @@ export default async function OrdersPage() {
           description="Share your link. Paid orders land here."
         />
       ) : (
-        <ul className="space-y-3">
-          {orders.map((order) => (
-            <VendorOrderRow key={order.id} order={order} />
-          ))}
-        </ul>
+        <SearchableOrders orders={orders} />
       )}
     </div>
   );
