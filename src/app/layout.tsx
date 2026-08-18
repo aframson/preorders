@@ -18,12 +18,28 @@ const display = Raleway({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_SITE_URL ?? "https://bookpreorders.vercel.app",
+  ),
   title: {
     default: "Preorders — run your WhatsApp preorders without the chaos",
     template: "%s · Preorders",
   },
   description:
-    "WhatsApp is for selling. This runs the batch: goods paid now, a tracking page for every customer, a buy-list for your supplier, and shipping split by weight when the bill arrives.",
+    "Paid catalog, automatic cutoff, supplier buy-list, fair freight when the bill lands. One link for customers. The board for you — not another week of chat screenshots.",
+  openGraph: {
+    type: "website",
+    siteName: "Preorders",
+    title: "Run preorders like an operation.",
+    description:
+      "Paid catalog, automatic cutoff, supplier buy-list, fair freight when the bill lands. One link for customers. The board for you.",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Run preorders like an operation.",
+    description:
+      "Paid catalog, automatic cutoff, supplier buy-list, fair freight when the bill lands. One link for customers. The board for you.",
+  },
 };
 
 export const viewport: Viewport = {
