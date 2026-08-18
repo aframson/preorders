@@ -171,22 +171,33 @@ export function VendorBatchCalendar({
 
       <div className="flex min-h-0 flex-1 flex-col">
         {weeks.map((week, weekIndex) => {
-          const spans = visible
-            .map((batch) => {
-              const range = clipSpanToWeek(batch.startKey, batch.endKey, week);
-              if (!range) return null;
-              return { batch, ...range };
-            })
-            .filter(Boolean) as {
-            batch: CalBatch;
-            startCol: number;
-            span: number;
-          }[];
+          const spans = packWeekLanes(
+            visible
+              .map((batch) => {
+                const range = clipSpanToWeek(batch.startKey, batch.endKey, week);
+                if (!range) return null;
+                return { batch, ...range };
+              })
+              .filter(Boolean) as {
+              batch: CalBatch;
+              startCol: number;
+              span: number;
+            }[],
+          );
+
+          const laneCount = spans.reduce(
+            (max, item) => Math.max(max, item.lane + 1),
+            0,
+          );
+          // Room for day number + stacked bars (mobile was crushing bars together).
+          const barsHeight = laneCount > 0 ? laneCount * 22 + 4 : 0;
+          const weekMinPx = Math.max(88, 32 + barsHeight);
 
           return (
             <div
               key={`week-${weekIndex}`}
-              className="relative grid min-h-0 flex-1 grid-cols-7 border-b border-border"
+              className="relative grid min-h-[5.5rem] flex-none grid-cols-7 border-b border-border xl:min-h-0 xl:flex-1"
+              style={{ minHeight: weekMinPx }}
             >
               {week.map((day, col) => {
                 if (!day) {
@@ -212,10 +223,10 @@ export function VendorBatchCalendar({
                       isToday && "bg-brand-50/50",
                     )}
                   >
-                    <div className="flex items-start justify-between px-1.5 pt-1">
+                    <div className="flex items-start justify-between px-1 pt-1 sm:px-1.5">
                       <span
                         className={cn(
-                          "inline-flex size-6 items-center justify-center text-xs",
+                          "inline-flex size-5 items-center justify-center text-[11px] sm:size-6 sm:text-xs",
                           isToday
                             ? "bg-brand-700 font-semibold text-white"
                             : "text-ink-muted",
@@ -243,27 +254,32 @@ export function VendorBatchCalendar({
                 );
               })}
 
-              <div className="pointer-events-none absolute inset-x-0 top-7 bottom-1 space-y-0.5 px-0.5">
-                {spans.slice(0, 3).map(({ batch, startCol, span }) => {
+              <div className="pointer-events-none absolute inset-x-0 top-7 bottom-1 px-0.5">
+                {spans.map(({ batch, startCol, span, lane }) => {
                   const color = BATCH_COLORS[batch.colorIndex];
                   const closed = isClosedBatch(batch.status);
+                  const shortLabel = `B${batch.label.replace(/^B(\d+).*$/, "$1")}`;
                   return (
                     <Link
                       key={batch.id}
                       href={`/dashboard/drops/${batch.dropId}/batches/${batch.id}`}
                       className={cn(
-                        "pointer-events-auto flex h-5 items-center truncate px-1.5 text-[10px] font-medium",
+                        "pointer-events-auto absolute flex h-[18px] items-center truncate rounded-sm px-1 text-[9px] font-semibold sm:h-5 sm:px-1.5 sm:text-[10px] sm:font-medium",
                         closed
                           ? "bg-border-strong/35 text-ink-subtle"
                           : cn(color.bar, "text-white"),
                       )}
                       style={{
-                        marginLeft: `calc(${(startCol / 7) * 100}% + 1px)`,
+                        top: lane * 22,
+                        left: `calc(${(startCol / 7) * 100}% + 1px)`,
                         width: `calc(${(span / 7) * 100}% - 2px)`,
                       }}
                       title={`${batch.label} · ${BATCH_STATUS[batch.status].label}`}
                     >
-                      {batch.label}
+                      <span className="truncate sm:hidden">{shortLabel}</span>
+                      <span className="hidden truncate sm:inline">
+                        {batch.label}
+                      </span>
                     </Link>
                   );
                 })}
@@ -380,6 +396,34 @@ function clipSpanToWeek(
   }
   if (startCol === -1 || endCol === -1) return null;
   return { startCol, span: endCol - startCol + 1 };
+}
+
+/**
+ * Pack overlapping week spans into vertical lanes so bars never sit on top of
+ * each other (especially on short mobile week rows).
+ */
+function packWeekLanes<
+  T extends { startCol: number; span: number; batch: CalBatch },
+>(spans: T[]): (T & { lane: number })[] {
+  const sorted = [...spans].sort(
+    (a, b) =>
+      a.startCol - b.startCol ||
+      b.span - a.span ||
+      a.batch.label.localeCompare(b.batch.label),
+  );
+
+  const laneEnds: number[] = [];
+  return sorted.map((item) => {
+    const endCol = item.startCol + item.span;
+    let lane = laneEnds.findIndex((end) => end <= item.startCol);
+    if (lane === -1) {
+      lane = laneEnds.length;
+      laneEnds.push(endCol);
+    } else {
+      laneEnds[lane] = endCol;
+    }
+    return { ...item, lane };
+  });
 }
 
 function isClosedBatch(status: BatchStatus) {
