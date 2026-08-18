@@ -80,7 +80,7 @@ export function VendorSearch({ className }: { className?: string }) {
         type="button"
         onClick={() => setOpen(true)}
         className={cn(
-          "group flex w-full items-center gap-3 rounded-2xl border-2 border-ink/15 bg-surface px-5 py-4 text-left shadow-sm transition-all hover:border-brand-400 hover:shadow-md sm:px-6 sm:py-5",
+          "group flex w-full items-center gap-3 rounded-2xl border border-border/40 bg-surface px-5 py-4 text-left shadow-none transition-colors hover:border-border/70 sm:px-6 sm:py-5",
           className,
         )}
       >
@@ -109,7 +109,7 @@ export function VendorSearch({ className }: { className?: string }) {
           aria-modal="true"
           aria-labelledby={titleId}
         >
-          <div className="border-b border-border bg-surface px-4 pt-[max(1rem,env(safe-area-inset-top))] pb-4 sm:px-6">
+          <div className="border-b border-border/40 bg-surface px-4 pt-[max(1rem,env(safe-area-inset-top))] pb-4 sm:px-6">
             <div className="mx-auto flex w-full max-w-2xl items-start gap-3">
               <div className="min-w-0 flex-1 space-y-3">
                 <p
@@ -125,13 +125,13 @@ export function VendorSearch({ className }: { className?: string }) {
                   autoFocus
                   label="Search vendors"
                   placeholder="Business name…"
-                  inputClassName="h-14 border-2 text-lg font-medium sm:h-14"
+                  inputClassName="h-14 text-lg font-medium shadow-none sm:h-14"
                 />
               </div>
               <button
                 type="button"
                 onClick={close}
-                className="mt-1 flex size-11 shrink-0 items-center justify-center rounded-full border border-border bg-surface text-ink-muted transition-colors hover:bg-surface-muted hover:text-ink"
+                className="mt-1 flex size-11 shrink-0 items-center justify-center rounded-full border border-border/40 bg-surface text-ink-muted shadow-none transition-colors hover:bg-surface-muted hover:text-ink"
                 aria-label="Close search"
               >
                 <X className="size-5" aria-hidden />
@@ -157,7 +157,7 @@ export function VendorSearch({ className }: { className?: string }) {
                   </p>
                 </div>
               ) : (
-                <ul className="divide-y divide-border overflow-hidden rounded-card border border-border bg-surface">
+                <ul className="divide-y divide-border/40 overflow-hidden rounded-card border border-border/40 bg-surface shadow-none">
                   {hits.map((hit) => {
                     const href = hit.openDropSlug
                       ? dropPath(hit.slug, hit.openDropSlug)
