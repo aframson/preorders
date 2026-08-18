@@ -2,6 +2,7 @@ import "server-only";
 
 import { isPastCutoff } from "@/lib/jobs";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { BUCKETS, publicUrl } from "@/lib/storage";
 
 export type ShareCard = {
   vendorName: string;
@@ -9,6 +10,7 @@ export type ShareCard = {
   batchNumber: number | null;
   orderCount: number;
   open: boolean;
+  logoUrl: string | null;
 };
 
 /**
@@ -26,7 +28,7 @@ export async function getShareCard(
 
   const { data: vendor } = await admin
     .from("vendors")
-    .select("id, business_name")
+    .select("id, business_name, logo_path")
     .eq("slug", vendorSlug)
     .maybeSingle();
 
@@ -64,5 +66,8 @@ export async function getShareCard(
     batchNumber: open?.number ?? null,
     orderCount,
     open: Boolean(open),
+    logoUrl: vendor.logo_path
+      ? publicUrl(BUCKETS.vendorAssets, vendor.logo_path)
+      : null,
   };
 }

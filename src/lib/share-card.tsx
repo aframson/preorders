@@ -4,6 +4,7 @@ type ShareCard = {
   batchNumber: number | null;
   orderCount: number;
   open: boolean;
+  logoUrl?: string | null;
 };
 
 const CREAM = "#FDFBF8";

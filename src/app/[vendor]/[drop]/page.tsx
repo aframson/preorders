@@ -30,7 +30,16 @@ export async function generateMetadata({
   return {
     title,
     description,
-    openGraph: { title, description, type: "website" },
+    openGraph: {
+      title,
+      description,
+      type: "website",
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+    },
     other: data.openBatch
       ? { "og:url": `/${vendor}/${drop}?b=${data.openBatch.number}` }
       : undefined,
