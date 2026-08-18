@@ -239,6 +239,7 @@ const productSchema = z.object({
   volumeCm3: z.number().int().min(0).nullable(),
   stockLimit: z.number().int().min(0).nullable(),
   moq: z.number().int().min(1),
+  availability: z.enum(["preorder", "in_stock"]),
   published: z.boolean(),
   variants: z.array(variantSchema).max(50),
   images: z.array(imageSchema).max(10),
@@ -277,6 +278,7 @@ export async function saveProduct(
     volume_cm3: input.volumeCm3,
     stock_limit: input.stockLimit,
     moq: input.moq,
+    availability: input.availability,
     published: input.published,
   };
 

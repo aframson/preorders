@@ -2,6 +2,7 @@ import { ImageOff } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 
+import { AvailabilityTag } from "@/components/product-availability-tag";
 import { estimateFreight, freightUnits, type FreightMode } from "@/lib/freight";
 import { formatGhsCompact } from "@/lib/money";
 import type { PublicProduct } from "@/lib/queries/public-drop";
@@ -62,6 +63,7 @@ export function ProductCard({
             <ImageOff className="size-6" aria-hidden />
           </div>
         )}
+        <AvailabilityTag availability={product.availability} />
         {soldOut && (
           <span className="absolute inset-x-2 bottom-2 rounded-full bg-ink/80 px-2 py-1 text-center text-xs font-medium text-white">
             Sold out

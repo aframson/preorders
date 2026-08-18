@@ -3,6 +3,7 @@ import "server-only";
 import type { FreightMode } from "@/lib/freight";
 import { isPastCutoff } from "@/lib/jobs";
 import type { Pesewas } from "@/lib/money";
+import type { ProductAvailability } from "@/lib/product-availability";
 import type { BatchStatus } from "@/lib/status";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
@@ -28,6 +29,7 @@ export type PublicProduct = {
   volumeCm3: number | null;
   stockLimit: number | null;
   moq: number;
+  availability: ProductAvailability;
   images: { path: string; width: number | null; height: number | null }[];
   variants: PublicVariant[];
 };
@@ -118,7 +120,7 @@ export async function getPublicDrop(
       supabase
         .from("products")
         .select(
-          "id, name, description, price, category_id, weight_grams, volume_cm3, stock_limit, moq, product_images(storage_path, width, height, position), product_variants(id, name, value, price_delta, weight_grams, volume_cm3, stock_limit, image_path, position)",
+          "id, name, description, price, category_id, weight_grams, volume_cm3, stock_limit, moq, availability, product_images(storage_path, width, height, position), product_variants(id, name, value, price_delta, weight_grams, volume_cm3, stock_limit, image_path, position)",
         )
         .eq("drop_id", drop.id)
         .eq("published", true)
@@ -190,6 +192,7 @@ export async function getPublicDrop(
       volumeCm3: product.volume_cm3,
       stockLimit: product.stock_limit,
       moq: product.moq,
+      availability: product.availability,
       images: [...(product.product_images ?? [])]
         .sort((a, b) => a.position - b.position)
         .map((image) => ({

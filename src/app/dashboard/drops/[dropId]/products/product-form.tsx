@@ -19,6 +19,10 @@ import { Button } from "@/components/ui/button";
 import { Field, Input, Label, Select, Textarea } from "@/components/ui/field";
 import { StickyActionBar } from "@/components/ui/sticky-action-bar";
 import { FREIGHT_PRESETS } from "@/lib/freight-presets";
+import {
+  PRODUCT_AVAILABILITY,
+  type ProductAvailability,
+} from "@/lib/product-availability";
 import { deleteProduct, saveProduct, type ActionState } from "../../actions";
 
 export type ProductFormValues = {
@@ -32,6 +36,7 @@ export type ProductFormValues = {
   volumeCm3: number | null;
   stockLimit: number | null;
   moq: number;
+  availability: ProductAvailability;
   published: boolean;
   variants: VariantDraft[];
   images: UploadedImage[];
@@ -87,6 +92,7 @@ export function ProductForm({
     volumeCm3: values.volumeCm3,
     stockLimit: values.stockLimit,
     moq: values.moq,
+    availability: values.availability,
     published: values.published,
     variants: variantsFromGroups(groups),
     images: values.images,
@@ -172,6 +178,48 @@ export function ProductForm({
               placeholder="Sizes 38 to 45. Runs small, take one size up."
             />
           </Field>
+
+          <fieldset className="space-y-3">
+            <legend className="text-sm font-medium text-ink">Availability</legend>
+            <p className="text-sm text-ink-muted">
+              Shown as a small tag on the product photo.
+            </p>
+            <div className="grid gap-2 sm:grid-cols-2">
+              {(
+                Object.keys(PRODUCT_AVAILABILITY) as ProductAvailability[]
+              ).map((key) => {
+                const option = PRODUCT_AVAILABILITY[key];
+                const selected = values.availability === key;
+                return (
+                  <label
+                    key={key}
+                    className={
+                      selected
+                        ? "flex cursor-pointer flex-col gap-0.5 rounded-card border border-brand-500 bg-brand-50 px-4 py-3 dark:bg-brand-950/40"
+                        : "flex cursor-pointer flex-col gap-0.5 rounded-card border border-border bg-surface px-4 py-3"
+                    }
+                  >
+                    <span className="flex items-center gap-2">
+                      <input
+                        type="radio"
+                        name="availability"
+                        value={key}
+                        checked={selected}
+                        onChange={() => set("availability", key)}
+                        className="size-4 accent-brand-700"
+                      />
+                      <span className="text-sm font-medium text-ink">
+                        {option.label}
+                      </span>
+                    </span>
+                    <span className="pl-6 text-xs text-ink-muted">
+                      {option.hint}
+                    </span>
+                  </label>
+                );
+              })}
+            </div>
+          </fieldset>
         </section>
 
         <section className="space-y-4 rounded-card border border-border bg-surface p-5">

@@ -3,12 +3,14 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { AvailabilityTag } from "@/components/product-availability-tag";
 import { ButtonLink } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { cn } from "@/lib/cn";
 import { requireVendor } from "@/lib/auth";
 import { FREIGHT_MODES, type FreightMode } from "@/lib/freight";
 import { formatGhsCompact } from "@/lib/money";
+import type { ProductAvailability } from "@/lib/product-availability";
 import { BUCKETS, publicUrl } from "@/lib/storage";
 import { createClient } from "@/lib/supabase/server";
 
@@ -43,7 +45,7 @@ export default async function DropProductsPage({
     supabase
       .from("products")
       .select(
-        "id, name, price, published, stock_limit, weight_grams, volume_cm3, category_id, product_images(storage_path, position)",
+        "id, name, price, published, stock_limit, weight_grams, volume_cm3, category_id, availability, product_images(storage_path, position)",
       )
       .eq("drop_id", dropId)
       .order("position"),
@@ -156,8 +158,14 @@ export default async function DropProductsPage({
                       </div>
                     )}
 
+                    <AvailabilityTag
+                      availability={
+                        product.availability as ProductAvailability
+                      }
+                    />
+
                     {measurementLabel === null && (
-                      <span className="absolute top-2 left-2 flex items-center gap-1 rounded-full bg-closing px-2 py-0.5 text-[10px] font-medium text-white">
+                      <span className="absolute top-9 left-2 flex items-center gap-1 rounded-full bg-closing px-2 py-0.5 text-[10px] font-medium text-white">
                         <AlertTriangle className="size-3" aria-hidden />
                         No {mode === "air_kg" ? "weight" : "volume"}
                       </span>

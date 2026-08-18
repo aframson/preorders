@@ -19,7 +19,7 @@ export default async function EditProductPage({
     supabase
       .from("products")
       .select(
-        "id, name, description, price, category_id, weight_grams, volume_cm3, stock_limit, moq, published, product_variants(id, name, value, price_delta, weight_grams, volume_cm3, stock_limit, image_path, position), product_images(storage_path, width, height, position)",
+        "id, name, description, price, category_id, weight_grams, volume_cm3, stock_limit, moq, availability, published, product_variants(id, name, value, price_delta, weight_grams, volume_cm3, stock_limit, image_path, position), product_images(storage_path, width, height, position)",
       )
       .eq("id", productId)
       .eq("drop_id", dropId)
@@ -51,6 +51,7 @@ export default async function EditProductPage({
           volumeCm3: product.volume_cm3,
           stockLimit: product.stock_limit,
           moq: product.moq,
+          availability: product.availability,
           published: product.published,
           variants: [...(product.product_variants ?? [])]
             .sort((a, b) => a.position - b.position)

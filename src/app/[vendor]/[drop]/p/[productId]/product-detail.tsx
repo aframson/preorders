@@ -7,6 +7,7 @@ import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import { CartBar, useCart } from "@/components/public/cart";
+import { AvailabilityTag } from "@/components/product-availability-tag";
 import { Button } from "@/components/ui/button";
 import { QuantityStepper } from "@/components/ui/quantity-stepper";
 import { StickyActionBar } from "@/components/ui/sticky-action-bar";
@@ -184,6 +185,7 @@ export function ProductDetail({
               <ImageOff className="size-8" aria-hidden />
             </div>
           )}
+          <AvailabilityTag availability={product.availability} />
         </div>
 
         {product.images.length > 1 && (

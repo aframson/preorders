@@ -70,6 +70,7 @@ export default async function NewProductPage({
           volumeCm3: null,
           stockLimit: null,
           moq: 1,
+          availability: "preorder",
           published: true,
           variants: [],
           images: [],

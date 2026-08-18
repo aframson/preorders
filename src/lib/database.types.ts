@@ -627,6 +627,7 @@ export type Database = {
       }
       products: {
         Row: {
+          availability: Database["public"]["Enums"]["product_availability"]
           category_id: string | null
           created_at: string
           description: string | null
@@ -643,6 +644,7 @@ export type Database = {
           weight_grams: number | null
         }
         Insert: {
+          availability?: Database["public"]["Enums"]["product_availability"]
           category_id?: string | null
           created_at?: string
           description?: string | null
@@ -659,6 +661,7 @@ export type Database = {
           weight_grams?: number | null
         }
         Update: {
+          availability?: Database["public"]["Enums"]["product_availability"]
           category_id?: string | null
           created_at?: string
           description?: string | null
@@ -868,6 +871,7 @@ export type Database = {
         | "abandoned"
         | "refunded"
       payment_type: "goods" | "freight"
+      product_availability: "preorder" | "in_stock"
       vendor_role: "owner" | "staff"
     }
     CompositeTypes: {
@@ -1023,6 +1027,7 @@ export const Constants = {
       ],
       payment_status: ["pending", "success", "failed", "abandoned", "refunded"],
       payment_type: ["goods", "freight"],
+      product_availability: ["preorder", "in_stock"],
       vendor_role: ["owner", "staff"],
     },
   },
