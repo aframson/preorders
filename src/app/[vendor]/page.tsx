@@ -24,7 +24,16 @@ export async function generateMetadata({
   return {
     title: data.vendor.businessName,
     description,
-    openGraph: { title: data.vendor.businessName, description, type: "website" },
+    openGraph: {
+      title: data.vendor.businessName,
+      description,
+      type: "website",
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: data.vendor.businessName,
+      description,
+    },
   };
 }
 
