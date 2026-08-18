@@ -25,10 +25,8 @@ const MODES = [
 ] as const;
 
 export function DropForm({
-  defaultTitle,
   defaultClosesAt,
 }: {
-  defaultTitle: string;
   /** Accra-time `datetime-local` value, computed on the server. */
   defaultClosesAt: string;
 }) {
@@ -65,14 +63,18 @@ export function DropForm({
         <Field
           label="Drop name"
           htmlFor="title"
-          hint="Customers see this on your link. You can rename it later."
+          hint={
+            <>
+              Customers see this on your link. Example:{" "}
+              <span className="text-ink-muted">September China run</span>
+            </>
+          }
         >
           <Input
             id="title"
             name="title"
             required
             autoFocus
-            defaultValue={defaultTitle}
             placeholder="September China run"
           />
         </Field>

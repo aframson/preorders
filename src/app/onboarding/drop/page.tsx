@@ -23,9 +23,6 @@ export default async function DropStep() {
   if (existing) redirect(`/onboarding/done?drop=${existing.slug}`);
 
   return (
-    <DropForm
-      defaultTitle={`${vendor.businessName} preorders`}
-      defaultClosesAt={toAccraInputValue(defaultCutoff(14))}
-    />
+    <DropForm defaultClosesAt={toAccraInputValue(defaultCutoff(14))} />
   );
 }
