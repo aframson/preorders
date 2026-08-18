@@ -42,7 +42,7 @@ function MiniBoard({ style }: { style?: CSSProperties }) {
       >
         <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
           <div style={{ fontSize: 12, color: SUBTLE, fontWeight: 600 }}>
-            China run · Batch 3
+            China run / Batch 3
           </div>
           <div style={{ fontSize: 22, fontWeight: 700, color: INK }}>
             September drop
@@ -59,7 +59,7 @@ function MiniBoard({ style }: { style?: CSSProperties }) {
             borderRadius: 999,
           }}
         >
-          Open · 34
+          Open / 34
         </div>
       </div>
       <div style={{ display: "flex", flex: 1 }}>
@@ -102,7 +102,7 @@ function MiniBoard({ style }: { style?: CSSProperties }) {
             >
               <div style={{ fontSize: 11, color: MUTED }}>Paid</div>
               <div style={{ fontSize: 18, fontWeight: 700, color: INK }}>
-                GH₵12.4k
+                GHS 12.4k
               </div>
             </div>
             <div
@@ -141,9 +141,9 @@ function MiniBoard({ style }: { style?: CSSProperties }) {
             PAID TODAY
           </div>
           {[
-            ["Ama Mensah", "GH₵480"],
-            ["Kwame Boateng", "GH₵320"],
-            ["Yaa Asante", "GH₵185"],
+            ["Ama Mensah", "GHS 480"],
+            ["Kwame Boateng", "GHS 320"],
+            ["Yaa Asante", "GHS 185"],
           ].map(([name, amount]) => (
             <div
               key={name}
@@ -258,7 +258,7 @@ function MiniCalendar({ style }: { style?: CSSProperties }) {
           width: 180,
         }}
       >
-        B3 · Open
+        B3 / Open
       </div>
     </div>
   );
@@ -370,7 +370,7 @@ export function MarketingOgCard() {
               maxWidth: 420,
             }}
           >
-            One link for customers. The board for you — not another week of chat
+            One link for customers. The board for you - not another week of chat
             screenshots.
           </div>
         </div>

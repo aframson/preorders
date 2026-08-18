@@ -1,6 +1,7 @@
 import { ImageResponse } from "next/og";
 
 import { DropOgCard } from "@/lib/drop-og";
+import { toOgLogoSrc } from "@/lib/og-logo";
 import { getShareCard } from "@/lib/queries/share-card";
 
 export const runtime = "nodejs";
@@ -18,7 +19,11 @@ export default async function Image({
 
   try {
     const card = await getShareCard(vendor, drop);
-    return new ImageResponse(<DropOgCard card={card} />, size);
+    const logoUrl = await toOgLogoSrc(card?.logoUrl);
+    return new ImageResponse(
+      <DropOgCard card={card ? { ...card, logoUrl } : null} />,
+      size,
+    );
   } catch {
     return new ImageResponse(<DropOgCard card={null} />, size);
   }

@@ -126,6 +126,7 @@ export function VendorOgCard({ card }: { card: VendorShareCard | null }) {
             <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
               <div
                 style={{
+                  display: "flex",
                   width: 24,
                   height: 5,
                   borderRadius: 3,
@@ -134,6 +135,7 @@ export function VendorOgCard({ card }: { card: VendorShareCard | null }) {
               />
               <div
                 style={{
+                  display: "flex",
                   width: 24,
                   height: 5,
                   borderRadius: 3,
@@ -143,6 +145,7 @@ export function VendorOgCard({ card }: { card: VendorShareCard | null }) {
               />
               <div
                 style={{
+                  display: "flex",
                   width: 24,
                   height: 5,
                   borderRadius: 3,
@@ -151,11 +154,12 @@ export function VendorOgCard({ card }: { card: VendorShareCard | null }) {
                 }}
               />
             </div>
-            Preorders
+            <div style={{ display: "flex" }}>Preorders</div>
           </div>
 
           <div style={{ display: "flex", alignItems: "center", gap: 28 }}>
             {card?.logoUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element -- next/og requires <img>
               <img
                 src={card.logoUrl}
                 width={168}
@@ -199,6 +203,7 @@ export function VendorOgCard({ card }: { card: VendorShareCard | null }) {
             >
               <div
                 style={{
+                  display: "flex",
                   fontSize: 22,
                   fontWeight: 700,
                   color: AUBERGINE,
@@ -210,6 +215,7 @@ export function VendorOgCard({ card }: { card: VendorShareCard | null }) {
               </div>
               <div
                 style={{
+                  display: "flex",
                   fontSize: nameSize(name),
                   fontWeight: 800,
                   color: INK,
@@ -221,6 +227,7 @@ export function VendorOgCard({ card }: { card: VendorShareCard | null }) {
               </div>
               <div
                 style={{
+                  display: "flex",
                   fontSize: 24,
                   color: MUTED,
                   fontWeight: 600,
@@ -234,7 +241,7 @@ export function VendorOgCard({ card }: { card: VendorShareCard | null }) {
           <div style={{ display: "flex", gap: 16 }}>
             {card && card.reviewCount > 0 && card.ratingAverage != null ? (
               <MetaPill
-                value={`${formatRating(card.ratingAverage)}★`}
+                value={formatRating(card.ratingAverage)}
                 label={`${card.reviewCount} review${card.reviewCount === 1 ? "" : "s"}`}
               />
             ) : null}
@@ -263,7 +270,14 @@ export function VendorOgCard({ card }: { card: VendorShareCard | null }) {
           }}
         >
           {openCount > 0 ? (
-            <>
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                height: "100%",
+                justifyContent: "space-between",
+              }}
+            >
               <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
                 <div
                   style={{
@@ -280,7 +294,7 @@ export function VendorOgCard({ card }: { card: VendorShareCard | null }) {
                     letterSpacing: "0.06em",
                   }}
                 >
-                  ● LIVE
+                  LIVE
                 </div>
                 <div
                   style={{
@@ -291,6 +305,7 @@ export function VendorOgCard({ card }: { card: VendorShareCard | null }) {
                 >
                   <div
                     style={{
+                      display: "flex",
                       fontSize: 72,
                       fontWeight: 800,
                       color: CREAM,
@@ -298,74 +313,83 @@ export function VendorOgCard({ card }: { card: VendorShareCard | null }) {
                       letterSpacing: "-0.04em",
                     }}
                   >
-                    {openCount}
+                    {String(openCount)}
                   </div>
                   <div
                     style={{
+                      display: "flex",
                       fontSize: 30,
                       fontWeight: 800,
                       color: CREAM,
                       letterSpacing: "-0.02em",
                     }}
                   >
-                    open batch{openCount === 1 ? "" : "es"}
+                    {`open batch${openCount === 1 ? "" : "es"}`}
                   </div>
                   <div
                     style={{
+                      display: "flex",
                       marginTop: 8,
                       fontSize: 20,
                       color: "#D0A8C4",
                       fontWeight: 600,
                     }}
                   >
-                    Order now · pay goods today
+                    Order now / pay goods today
                   </div>
                 </div>
               </div>
 
               <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                {openTitles.length > 0
-                  ? openTitles.map((title) => (
-                      <div
-                        key={title}
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: 12,
-                          background: "rgba(253,251,248,0.1)",
-                          borderRadius: 16,
-                          padding: "14px 16px",
-                        }}
-                      >
-                        <div
-                          style={{
-                            width: 10,
-                            height: 10,
-                            borderRadius: 999,
-                            background: OPEN_TINT,
-                            display: "flex",
-                          }}
-                        />
-                        <div
-                          style={{
-                            fontSize: 22,
-                            fontWeight: 700,
-                            color: CREAM,
-                            letterSpacing: "-0.02em",
-                          }}
-                        >
-                          {title}
-                        </div>
-                      </div>
-                    ))
-                  : null}
+                {openTitles.map((title) => (
+                  <div
+                    key={title}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 12,
+                      background: "rgba(253,251,248,0.1)",
+                      borderRadius: 16,
+                      padding: "14px 16px",
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: 10,
+                        height: 10,
+                        borderRadius: 999,
+                        background: OPEN_TINT,
+                        display: "flex",
+                      }}
+                    />
+                    <div
+                      style={{
+                        display: "flex",
+                        fontSize: 22,
+                        fontWeight: 700,
+                        color: CREAM,
+                        letterSpacing: "-0.02em",
+                      }}
+                    >
+                      {title}
+                    </div>
+                  </div>
+                ))}
               </div>
-            </>
+            </div>
           ) : (
-            <>
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                height: "100%",
+                justifyContent: "space-between",
+              }}
+            >
               <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                 <div
                   style={{
+                    display: "flex",
                     fontSize: 20,
                     fontWeight: 800,
                     color: MUTED,
@@ -376,6 +400,7 @@ export function VendorOgCard({ card }: { card: VendorShareCard | null }) {
                 </div>
                 <div
                   style={{
+                    display: "flex",
                     fontSize: 42,
                     fontWeight: 800,
                     color: INK,
@@ -385,8 +410,15 @@ export function VendorOgCard({ card }: { card: VendorShareCard | null }) {
                 >
                   Batches coming soon
                 </div>
-                <div style={{ fontSize: 22, color: MUTED, fontWeight: 600 }}>
-                  Bookmark this shop — open windows show here first.
+                <div
+                  style={{
+                    display: "flex",
+                    fontSize: 22,
+                    color: MUTED,
+                    fontWeight: 600,
+                  }}
+                >
+                  Bookmark this shop - open windows show here first.
                 </div>
               </div>
               <div
@@ -403,7 +435,7 @@ export function VendorOgCard({ card }: { card: VendorShareCard | null }) {
               >
                 {card ? `${card.slug} on Preorders` : "on Preorders"}
               </div>
-            </>
+            </div>
           )}
         </div>
       </div>
@@ -427,6 +459,7 @@ function MetaPill({ value, label }: { value: string; label: string }) {
     >
       <div
         style={{
+          display: "flex",
           fontSize: 28,
           fontWeight: 800,
           color: INK,
@@ -435,7 +468,16 @@ function MetaPill({ value, label }: { value: string; label: string }) {
       >
         {value}
       </div>
-      <div style={{ fontSize: 16, color: SUBTLE, fontWeight: 600 }}>{label}</div>
+      <div
+        style={{
+          display: "flex",
+          fontSize: 16,
+          color: SUBTLE,
+          fontWeight: 600,
+        }}
+      >
+        {label}
+      </div>
     </div>
   );
 }

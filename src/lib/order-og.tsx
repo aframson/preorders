@@ -123,7 +123,7 @@ export function OrderOgCard({ card }: { card: OrderShareCard | null }) {
         </div>
         <div style={{ fontSize: 28, color: SUBTLE }}>
           {card
-            ? `${card.dropTitle} · Batch ${card.batchNumber}`
+            ? `${card.dropTitle} / Batch ${card.batchNumber}`
             : "Track your preorder"}
         </div>
       </div>

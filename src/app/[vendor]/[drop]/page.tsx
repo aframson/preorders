@@ -25,22 +25,25 @@ export async function generateMetadata({
     ? `Batch ${data.openBatch.number} is open. ${data.openBatch.orderCount} orders in. Pick what you want and pay online.`
     : `Orders are closed right now. Leave your email to hear when the next batch opens.`;
 
+  const canonicalPath = data.openBatch
+    ? `/${vendor}/${drop}?b=${data.openBatch.number}`
+    : `/${vendor}/${drop}`;
+
   return {
     title,
     description,
+    alternates: { canonical: canonicalPath },
     openGraph: {
       title,
       description,
       type: "website",
+      url: canonicalPath,
     },
     twitter: {
       card: "summary_large_image",
       title,
       description,
     },
-    other: data.openBatch
-      ? { "og:url": `/${vendor}/${drop}?b=${data.openBatch.number}` }
-      : undefined,
   };
 }
 

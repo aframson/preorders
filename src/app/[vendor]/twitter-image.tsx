@@ -1,5 +1,6 @@
 import { ImageResponse } from "next/og";
 
+import { toOgLogoSrc } from "@/lib/og-logo";
 import { getVendorShareCard } from "@/lib/queries/vendor-share-card";
 import { VendorOgCard } from "@/lib/vendor-og";
 
@@ -18,7 +19,11 @@ export default async function Image({
 
   try {
     const card = await getVendorShareCard(vendor);
-    return new ImageResponse(<VendorOgCard card={card} />, size);
+    const logoUrl = await toOgLogoSrc(card?.logoUrl);
+    return new ImageResponse(
+      <VendorOgCard card={card ? { ...card, logoUrl } : null} />,
+      size,
+    );
   } catch {
     return new ImageResponse(<VendorOgCard card={null} />, size);
   }

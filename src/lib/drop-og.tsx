@@ -1,6 +1,10 @@
 /**
  * Social unfurl for a drop / batch shop link (1200×630).
  * Bold batch number + vendor name — what people see when sharing in WhatsApp.
+ *
+ * Satori rules: every multi-child <div> needs display:flex|contents|none;
+ * keep text as a single string (no adjacent JSX text nodes); avoid exotic
+ * glyphs that trigger broken dynamic-font downloads.
  */
 
 import type { ShareCard } from "@/lib/queries/share-card";
@@ -37,6 +41,8 @@ export function DropOgCard({ card }: { card: ShareCard | null }) {
   const dropTitle = card?.dropTitle ?? "Preorder batch";
   const open = Boolean(card?.open && card.batchNumber != null);
   const batchNumber = card?.batchNumber;
+  const orderCount = card?.orderCount ?? 0;
+  const ordersLabel = `${orderCount} order${orderCount === 1 ? "" : "s"} in`;
 
   return (
     <div
@@ -105,6 +111,7 @@ export function DropOgCard({ card }: { card: ShareCard | null }) {
             <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
               <div
                 style={{
+                  display: "flex",
                   width: 24,
                   height: 5,
                   borderRadius: 3,
@@ -113,6 +120,7 @@ export function DropOgCard({ card }: { card: ShareCard | null }) {
               />
               <div
                 style={{
+                  display: "flex",
                   width: 24,
                   height: 5,
                   borderRadius: 3,
@@ -122,6 +130,7 @@ export function DropOgCard({ card }: { card: ShareCard | null }) {
               />
               <div
                 style={{
+                  display: "flex",
                   width: 24,
                   height: 5,
                   borderRadius: 3,
@@ -130,11 +139,12 @@ export function DropOgCard({ card }: { card: ShareCard | null }) {
                 }}
               />
             </div>
-            Preorders
+            <div style={{ display: "flex" }}>Preorders</div>
           </div>
 
           <div style={{ display: "flex", alignItems: "center", gap: 24 }}>
             {card?.logoUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element -- next/og requires <img>
               <img
                 src={card.logoUrl}
                 width={132}
@@ -178,6 +188,7 @@ export function DropOgCard({ card }: { card: ShareCard | null }) {
             >
               <div
                 style={{
+                  display: "flex",
                   fontSize: vendorNameSize(vendorName),
                   fontWeight: 800,
                   color: INK,
@@ -189,6 +200,7 @@ export function DropOgCard({ card }: { card: ShareCard | null }) {
               </div>
               <div
                 style={{
+                  display: "flex",
                   fontSize: 32,
                   fontWeight: 700,
                   color: MUTED,
@@ -202,16 +214,16 @@ export function DropOgCard({ card }: { card: ShareCard | null }) {
 
           <div
             style={{
+              display: "flex",
               fontSize: 22,
               color: SUBTLE,
               fontWeight: 600,
             }}
           >
-            Pay for goods now · shipping when they land
+            Pay for goods now / shipping when they land
           </div>
         </div>
 
-        {/* Bold batch panel */}
         <div
           style={{
             display: "flex",
@@ -225,7 +237,14 @@ export function DropOgCard({ card }: { card: ShareCard | null }) {
           }}
         >
           {open && batchNumber != null ? (
-            <>
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                height: "100%",
+                justifyContent: "space-between",
+              }}
+            >
               <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
                 <div
                   style={{
@@ -240,10 +259,11 @@ export function DropOgCard({ card }: { card: ShareCard | null }) {
                     letterSpacing: "0.08em",
                   }}
                 >
-                  ● OPEN NOW
+                  OPEN NOW
                 </div>
                 <div
                   style={{
+                    display: "flex",
                     fontSize: 28,
                     fontWeight: 800,
                     color: "#D0A8C4",
@@ -254,6 +274,7 @@ export function DropOgCard({ card }: { card: ShareCard | null }) {
                 </div>
                 <div
                   style={{
+                    display: "flex",
                     fontSize: 140,
                     fontWeight: 800,
                     color: CREAM,
@@ -261,7 +282,7 @@ export function DropOgCard({ card }: { card: ShareCard | null }) {
                     letterSpacing: "-0.06em",
                   }}
                 >
-                  {batchNumber}
+                  {String(batchNumber)}
                 </div>
               </div>
 
@@ -277,24 +298,39 @@ export function DropOgCard({ card }: { card: ShareCard | null }) {
               >
                 <div
                   style={{
+                    display: "flex",
                     fontSize: 26,
                     fontWeight: 800,
                     color: CREAM,
                   }}
                 >
-                  {card?.orderCount ?? 0} order
-                  {(card?.orderCount ?? 0) === 1 ? "" : "s"} in
+                  {ordersLabel}
                 </div>
-                <div style={{ fontSize: 20, color: "#D0A8C4", fontWeight: 600 }}>
+                <div
+                  style={{
+                    display: "flex",
+                    fontSize: 20,
+                    color: "#D0A8C4",
+                    fontWeight: 600,
+                  }}
+                >
                   Tap to shop this batch
                 </div>
               </div>
-            </>
+            </div>
           ) : (
-            <>
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                height: "100%",
+                justifyContent: "space-between",
+              }}
+            >
               <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                 <div
                   style={{
+                    display: "flex",
                     fontSize: 20,
                     fontWeight: 800,
                     color: MUTED,
@@ -305,6 +341,7 @@ export function DropOgCard({ card }: { card: ShareCard | null }) {
                 </div>
                 <div
                   style={{
+                    display: "flex",
                     fontSize: 48,
                     fontWeight: 800,
                     color: INK,
@@ -314,7 +351,14 @@ export function DropOgCard({ card }: { card: ShareCard | null }) {
                 >
                   Next batch soon
                 </div>
-                <div style={{ fontSize: 22, color: MUTED, fontWeight: 600 }}>
+                <div
+                  style={{
+                    display: "flex",
+                    fontSize: 22,
+                    color: MUTED,
+                    fontWeight: 600,
+                  }}
+                >
                   Leave your email on the page to get told when it opens.
                 </div>
               </div>
@@ -332,7 +376,7 @@ export function DropOgCard({ card }: { card: ShareCard | null }) {
               >
                 on Preorders
               </div>
-            </>
+            </div>
           )}
         </div>
       </div>

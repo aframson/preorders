@@ -9,10 +9,10 @@ export async function middleware(request: NextRequest) {
 export const config = {
   matcher: [
     /*
-     * Everything except static assets and image files. Public drop pages do
-     * pass through here, but only to refresh a session that may exist; they
-     * are never redirected.
+     * Everything except static assets, image files, and OG/Twitter image
+     * routes. Social crawlers hit those often; skipping session refresh keeps
+     * the PNG path fast and avoids middleware interfering with ImageResponse.
      */
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|avif|ico)$).*)",
+    "/((?!_next/static|_next/image|favicon.ico|.*(?:opengraph-image|twitter-image).*|.*\\.(?:svg|png|jpg|jpeg|gif|webp|avif|ico)$).*)",
   ],
 };
