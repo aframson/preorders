@@ -52,39 +52,9 @@ export default async function PublicVendorPage({
         businessName={vendor.businessName}
         logoPath={vendor.logoPath}
         batchesDelivered={vendor.batchesDelivered}
-        ratingAverage={vendor.ratingAverage}
-        reviewCount={vendor.reviewCount}
       />
 
       <main className="mx-auto w-full max-w-3xl flex-1 px-5 py-6">
-        {recentReviews.length > 0 && (
-          <section className="mb-8 space-y-3">
-            <h2 className="font-display text-lg font-semibold text-ink">
-              What buyers say
-            </h2>
-            <ul className="space-y-3">
-              {recentReviews.map((review) => (
-                <li
-                  key={review.id}
-                  className="rounded-card border border-border bg-surface px-4 py-3"
-                >
-                  <div className="flex items-center justify-between gap-3">
-                    <p className="text-sm font-medium text-ink">
-                      {review.customerDisplayName}
-                    </p>
-                    <StarRow value={review.rating} size="sm" />
-                  </div>
-                  {review.comment && (
-                    <p className="mt-1.5 text-sm text-ink-muted">
-                      {review.comment}
-                    </p>
-                  )}
-                </li>
-              ))}
-            </ul>
-          </section>
-        )}
-
         <h2 className="font-display text-lg font-semibold text-ink">
           {drops.length === 1 ? "The batch" : "Batches"}
         </h2>
@@ -97,6 +67,47 @@ export default async function PublicVendorPage({
           businessName={vendor.businessName}
           drops={drops}
         />
+
+        {(vendor.reviewCount > 0 || recentReviews.length > 0) && (
+          <section className="mt-10 space-y-3 border-t border-border pt-8">
+            <div className="space-y-1">
+              <h2 className="font-display text-lg font-semibold text-ink">
+                What buyers say
+              </h2>
+              {vendor.reviewCount > 0 && vendor.ratingAverage != null ? (
+                <div className="flex flex-wrap items-center gap-2 text-sm text-ink-muted">
+                  <StarRow value={vendor.ratingAverage} size="sm" />
+                  <span data-numeric>
+                    {vendor.ratingAverage.toFixed(1)} · {vendor.reviewCount}{" "}
+                    review{vendor.reviewCount === 1 ? "" : "s"}
+                  </span>
+                </div>
+              ) : null}
+            </div>
+            {recentReviews.length > 0 ? (
+              <ul className="space-y-3">
+                {recentReviews.map((review) => (
+                  <li
+                    key={review.id}
+                    className="rounded-card border border-border bg-surface px-4 py-3"
+                  >
+                    <div className="flex items-center justify-between gap-3">
+                      <p className="text-sm font-medium text-ink">
+                        {review.customerDisplayName}
+                      </p>
+                      <StarRow value={review.rating} size="sm" />
+                    </div>
+                    {review.comment && (
+                      <p className="mt-1.5 text-sm text-ink-muted">
+                        {review.comment}
+                      </p>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            ) : null}
+          </section>
+        )}
       </main>
 
       <footer className="mx-auto w-full max-w-3xl px-5 py-8">
