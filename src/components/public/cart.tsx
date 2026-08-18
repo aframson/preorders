@@ -259,9 +259,12 @@ export function useCart(): CartContextValue {
 export function CartBar({
   checkoutHref,
   className,
+  /** Nested inside another fixed footer — no outer chrome of its own. */
+  embedded = false,
 }: {
   checkoutHref: string;
   className?: string;
+  embedded?: boolean;
 }) {
   const { count, subtotal, ready } = useCart();
 
@@ -270,7 +273,9 @@ export function CartBar({
   return (
     <div
       className={cn(
-        "sticky bottom-0 z-30 border-t border-border bg-surface px-4 pt-2 pb-safe",
+        embedded
+          ? null
+          : "sticky bottom-0 z-30 border-t border-border bg-surface px-4 pt-2 pb-safe",
         className,
       )}
     >

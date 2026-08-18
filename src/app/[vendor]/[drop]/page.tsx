@@ -1,17 +1,15 @@
 import type { Metadata } from "next";
-import { MessageCircle } from "lucide-react";
 import { notFound } from "next/navigation";
 
 import {
   BatchBanner,
   DeliveryExpectation,
 } from "@/components/public/batch-banner";
-import { CartBar } from "@/components/public/cart";
+import { DropShopFooter } from "@/components/public/drop-shop-footer";
 import { NotifyMeForm } from "@/components/public/notify-me-form";
 import { PublicProductCatalog } from "@/components/public/public-product-catalog";
 import { VendorHeader } from "@/components/public/vendor-header";
 import { NavChip } from "@/components/ui/nav-chip";
-import { cn } from "@/lib/cn";
 import { getPublicDrop } from "@/lib/queries/public-drop";
 import { dropPath, vendorPath, whatsappChatLink } from "@/lib/site";
 
@@ -113,13 +111,7 @@ export default async function PublicDropPage({
         )}
       </div>
 
-      <main
-        id="products"
-        className={cn(
-          "mx-auto w-full max-w-3xl flex-1",
-          questionsHref ? "pb-28" : "pb-8",
-        )}
-      >
+      <main id="products" className="mx-auto w-full max-w-3xl flex-1 pb-6">
         <PublicProductCatalog
           products={visible}
           base={base}
@@ -147,33 +139,15 @@ export default async function PublicDropPage({
         )}
       </main>
 
-      {questionsHref ? (
-        <div className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-surface pb-safe">
-          <div className="mx-auto w-full max-w-3xl space-y-1.5 px-4 py-2">
-            {openBatch && (
-              <CartBar
-                checkoutHref={`${base}/checkout`}
-                className="static border-0 bg-transparent p-0 shadow-none"
-              />
-            )}
-            <a
-              href={questionsHref}
-              target="_blank"
-              rel="noreferrer"
-              className="flex w-full items-center justify-center gap-1.5 rounded-control border border-border/70 bg-surface px-3 py-2 text-center text-xs font-medium text-ink"
-            >
-              <MessageCircle className="size-3.5 shrink-0 text-open" aria-hidden />
-              Questions? Chat with {vendor.businessName.split(" ")[0]}
-            </a>
-            <p className="text-center text-[11px] leading-snug text-ink-subtle">
-              Goods now · shipping later by{" "}
-              {openBatch?.freightMode === "air_kg" ? "weight" : "size"}
-            </p>
-          </div>
-        </div>
-      ) : (
-        openBatch && <CartBar checkoutHref={`${base}/checkout`} />
-      )}
+      <DropShopFooter
+        checkoutHref={`${base}/checkout`}
+        questionsHref={questionsHref}
+        vendorFirstName={vendor.businessName.split(" ")[0] ?? vendor.businessName}
+        freightModeLabel={
+          openBatch?.freightMode === "air_kg" ? "weight" : "size"
+        }
+        showCart={Boolean(openBatch)}
+      />
     </div>
   );
 }
