@@ -108,7 +108,7 @@ export default async function PublicDropPage({
         id="products"
         className={cn(
           "mx-auto w-full max-w-3xl flex-1",
-          questionsHref ? "pb-48" : "pb-8",
+          questionsHref ? "pb-28" : "pb-8",
         )}
       >
         <PublicProductCatalog
@@ -139,27 +139,26 @@ export default async function PublicDropPage({
       </main>
 
       {questionsHref ? (
-        <div className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-surface/95 shadow-bar backdrop-blur pb-safe">
-          <div className="mx-auto w-full max-w-3xl px-5 pt-3 pb-3">
+        <div className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-surface pb-safe">
+          <div className="mx-auto w-full max-w-3xl space-y-1.5 px-4 py-2">
             {openBatch && (
               <CartBar
                 checkoutHref={`${base}/checkout`}
-                className="static mb-2 border-0 bg-transparent p-0 shadow-none"
+                className="static border-0 bg-transparent p-0 shadow-none"
               />
             )}
             <a
               href={questionsHref}
               target="_blank"
               rel="noreferrer"
-              className="mx-auto flex w-full items-center justify-center gap-2 rounded-card border border-border bg-surface px-4 py-3.5 text-center text-sm font-medium text-ink"
+              className="flex w-full items-center justify-center gap-1.5 rounded-control border border-border/70 bg-surface px-3 py-2 text-center text-xs font-medium text-ink"
             >
-              <MessageCircle className="size-4 shrink-0 text-open" aria-hidden />
+              <MessageCircle className="size-3.5 shrink-0 text-open" aria-hidden />
               Questions? Chat with {vendor.businessName.split(" ")[0]}
             </a>
-            <p className="mx-auto mt-2 max-w-sm text-center text-xs leading-relaxed text-ink-subtle">
-              You pay for your goods now. Shipping is charged when they arrive,
-              split fairly by{" "}
-              {openBatch?.freightMode === "air_kg" ? "weight" : "size"}.
+            <p className="text-center text-[11px] leading-snug text-ink-subtle">
+              Goods now · shipping later by{" "}
+              {openBatch?.freightMode === "air_kg" ? "weight" : "size"}
             </p>
           </div>
         </div>

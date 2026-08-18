@@ -270,7 +270,7 @@ export function CartBar({
   return (
     <div
       className={cn(
-        "sticky bottom-0 z-30 border-t border-border bg-surface px-4 pt-3 shadow-bar pb-safe",
+        "sticky bottom-0 z-30 border-t border-border bg-surface px-4 pt-2 pb-safe",
         className,
       )}
     >
