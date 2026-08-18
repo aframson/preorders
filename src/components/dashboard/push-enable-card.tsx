@@ -1,6 +1,6 @@
 "use client";
 
-import { Bell, BellOff, Loader2 } from "lucide-react";
+import { Bell, BellOff, Loader2, Smartphone } from "lucide-react";
 import { useEffect, useState, useTransition } from "react";
 import { toast } from "sonner";
 
@@ -9,6 +9,8 @@ import {
   removePushSubscription,
   savePushSubscription,
 } from "@/app/dashboard/more/push-actions";
+
+type PermissionState = NotificationPermission | "unsupported";
 
 function urlBase64ToUint8Array(base64String: string): Uint8Array {
   const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
@@ -28,9 +30,28 @@ function pushSupported(): boolean {
   );
 }
 
+function isIos(): boolean {
+  if (typeof navigator === "undefined") return false;
+  const ua = navigator.userAgent;
+  const iOSDevice = /iPad|iPhone|iPod/.test(ua);
+  const iPadOs =
+    navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1;
+  return iOSDevice || iPadOs;
+}
+
+function isStandaloneDisplay(): boolean {
+  if (typeof window === "undefined") return false;
+  const media = window.matchMedia("(display-mode: standalone)").matches;
+  const iosStandalone =
+    "standalone" in navigator &&
+    Boolean((navigator as Navigator & { standalone?: boolean }).standalone);
+  return media || iosStandalone;
+}
+
 async function ensureServiceWorker(): Promise<ServiceWorkerRegistration | null> {
   if (!pushSupported()) return null;
-  return navigator.serviceWorker.register("/sw.js");
+  const reg = await navigator.serviceWorker.register("/sw.js");
+  return navigator.serviceWorker.ready.then(() => reg);
 }
 
 export function PushEnableCard({
@@ -40,11 +61,20 @@ export function PushEnableCard({
 }) {
   const [pending, startTransition] = useTransition();
   const [subscribed, setSubscribed] = useState(false);
+  const [permission, setPermission] = useState<PermissionState>("default");
+  const [standalone, setStandalone] = useState(false);
+  const [ios, setIos] = useState(false);
   const [ready, setReady] = useState(false);
-  const supported = pushSupported() && Boolean(vapidPublicKey);
+  const apiReady = Boolean(vapidPublicKey);
+  const browserReady = pushSupported();
+  const supported = browserReady && apiReady;
 
   useEffect(() => {
-    if (!supported || !vapidPublicKey) {
+    setIos(isIos());
+    setStandalone(isStandaloneDisplay());
+
+    if (!browserReady || !apiReady) {
+      setPermission(browserReady ? Notification.permission : "unsupported");
       setReady(true);
       return;
     }
@@ -52,6 +82,7 @@ export function PushEnableCard({
     let cancelled = false;
     void (async () => {
       try {
+        setPermission(Notification.permission);
         const reg = await ensureServiceWorker();
         const sub = await reg?.pushManager.getSubscription();
         if (!cancelled) setSubscribed(Boolean(sub));
@@ -65,15 +96,27 @@ export function PushEnableCard({
     return () => {
       cancelled = true;
     };
-  }, [supported, vapidPublicKey]);
+  }, [browserReady, apiReady]);
+
+  const needsInstall = ios && !standalone;
 
   function enable() {
     if (!vapidPublicKey) return;
+    if (needsInstall) {
+      toast.error("Install Preorders to your Home Screen first");
+      return;
+    }
+
     startTransition(async () => {
       try {
-        const permission = await Notification.requestPermission();
-        if (permission !== "granted") {
-          toast.error("Notifications were blocked");
+        const nextPermission = await Notification.requestPermission();
+        setPermission(nextPermission);
+        if (nextPermission !== "granted") {
+          toast.error(
+            nextPermission === "denied"
+              ? "Notifications are blocked for this site. Enable them in browser settings, then try again."
+              : "Notification permission was not granted",
+          );
           return;
         }
 
@@ -82,6 +125,8 @@ export function PushEnableCard({
           toast.error("This browser cannot install push");
           return;
         }
+
+        await navigator.serviceWorker.ready;
 
         const sub =
           (await reg.pushManager.getSubscription()) ??
@@ -143,11 +188,19 @@ export function PushEnableCard({
     );
   }
 
-  if (!supported) {
+  if (!apiReady) {
     return (
       <p className="text-sm text-ink-muted">
-        Push alerts need an installed PWA (or Chrome/Edge/Safari on a supported
-        device) and VAPID keys in env.
+        Push is not configured on this deployment yet (missing VAPID keys).
+      </p>
+    );
+  }
+
+  if (!browserReady) {
+    return (
+      <p className="text-sm text-ink-muted">
+        This browser does not support web push. Use Chrome, Edge, or Safari on
+        a supported device.
       </p>
     );
   }
@@ -156,8 +209,37 @@ export function PushEnableCard({
     <div className="space-y-3">
       <p className="text-sm text-ink-muted">
         Get a ping when someone pays for an order or adds a product to their
-        bag. Works best after you install Preorders to your home screen.
+        bag.
       </p>
+
+      {needsInstall ? (
+        <div className="rounded-xl border border-border bg-canvas px-3 py-3 text-sm text-ink">
+          <p className="flex items-start gap-2 font-medium">
+            <Smartphone className="mt-0.5 size-4 shrink-0 text-brand" aria-hidden />
+            Install the app first (required on iPhone)
+          </p>
+          <ol className="mt-2 list-decimal space-y-1 pl-5 text-ink-muted">
+            <li>Tap Share in Safari</li>
+            <li>Choose Add to Home Screen</li>
+            <li>Open Preorders from the home screen icon</li>
+            <li>Come back here and enable push</li>
+          </ol>
+        </div>
+      ) : (
+        <p className="text-sm text-ink-muted">
+          {standalone
+            ? "Running as the installed app — you can enable alerts on this device."
+            : "Works in Chrome/Edge here. On iPhone you must open the installed Home Screen app."}
+        </p>
+      )}
+
+      {permission === "denied" ? (
+        <p className="rounded-xl border border-danger/30 bg-danger/5 px-3 py-2 text-sm text-ink">
+          Notifications are blocked for this site. In your browser settings,
+          allow notifications for Preorders, then tap enable again.
+        </p>
+      ) : null}
+
       {subscribed ? (
         <Button
           type="button"
@@ -169,9 +251,18 @@ export function PushEnableCard({
           Turn off on this device
         </Button>
       ) : (
-        <Button type="button" onClick={enable} loading={pending}>
+        <Button
+          type="button"
+          onClick={enable}
+          loading={pending}
+          disabled={needsInstall || permission === "denied"}
+        >
           <Bell className="size-4" aria-hidden />
-          Enable push alerts
+          {permission === "denied"
+            ? "Notifications blocked"
+            : needsInstall
+              ? "Install app to enable"
+              : "Enable push alerts"}
         </Button>
       )}
     </div>
