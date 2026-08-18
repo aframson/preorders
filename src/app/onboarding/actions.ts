@@ -136,6 +136,66 @@ function describeSlugError(message: string, slug: string): string {
   return "Could not save your business details. Check your details and try again.";
 }
 
+const SLUG_PATTERN = /^[a-z0-9][a-z0-9-]{1,38}[a-z0-9]$/;
+
+export type SlugCheckResult = {
+  status: "idle" | "checking" | "available" | "taken" | "reserved" | "invalid" | "own";
+  message: string;
+};
+
+/** Live check so vendors know the link is free before they hit Continue. */
+export async function checkVendorSlug(slug: string): Promise<SlugCheckResult> {
+  const normalised = slugify(slug);
+
+  if (normalised.length < 3) {
+    return {
+      status: "invalid",
+      message: "Use at least 3 characters.",
+    };
+  }
+
+  if (!SLUG_PATTERN.test(normalised)) {
+    return {
+      status: "invalid",
+      message: "Use 3–40 letters, numbers or hyphens.",
+    };
+  }
+
+  if (isReservedSlug(normalised)) {
+    return {
+      status: "reserved",
+      message: `"${normalised}" is reserved. Try another link name.`,
+    };
+  }
+
+  const existing = await getVendor();
+  if (existing?.slug === normalised) {
+    return {
+      status: "own",
+      message: "This is your current link.",
+    };
+  }
+
+  const admin = createAdminClient();
+  const { data } = await admin
+    .from("vendors")
+    .select("id")
+    .eq("slug", normalised)
+    .maybeSingle();
+
+  if (data && data.id !== existing?.id) {
+    return {
+      status: "taken",
+      message: `"${normalised}" is already taken. Try another.`,
+    };
+  }
+
+  return {
+    status: "available",
+    message: "This link is available.",
+  };
+}
+
 /** Suggest a slug, avoiding ones already in use. */
 export async function suggestSlug(businessName: string): Promise<string> {
   const base = slugify(businessName) || "shop";
