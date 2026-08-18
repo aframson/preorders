@@ -101,6 +101,34 @@ export async function triggerStatusBroadcast(
   return handle.id;
 }
 
+export async function triggerVendorPush(params: {
+  vendorId: string;
+  title: string;
+  body: string;
+  url?: string;
+  tag?: string;
+  idempotencyKey?: string;
+}): Promise<string | null> {
+  if (!isJobRunnerConfigured()) return null;
+
+  const { tasks } = await import("@trigger.dev/sdk");
+  const handle = await tasks.trigger(
+    "vendor-push",
+    {
+      vendorId: params.vendorId,
+      title: params.title,
+      body: params.body,
+      url: params.url,
+      tag: params.tag,
+    },
+    params.idempotencyKey
+      ? { idempotencyKey: params.idempotencyKey }
+      : undefined,
+  );
+
+  return handle.id;
+}
+
 /**
  * A batch whose cutoff has passed must never keep taking orders, even if the
  * job that was meant to close it never ran. Every read path treats this as

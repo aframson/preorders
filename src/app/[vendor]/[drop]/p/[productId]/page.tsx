@@ -49,6 +49,8 @@ export default async function ProductPage({
         batch={data.openBatch}
         checkoutHref={`${base}/checkout`}
         shopHref={base}
+        vendorId={data.vendor.id}
+        dropTitle={data.drop.title}
       />
     </div>
   );

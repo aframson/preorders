@@ -60,3 +60,24 @@ export const statusBroadcast = task({
     return payload;
   },
 });
+
+/** Send a web-push notification to every device registered for a vendor. */
+export const vendorPush = task({
+  id: "vendor-push",
+  retry: { maxAttempts: 3 },
+  run: async (payload: {
+    vendorId: string;
+    title: string;
+    body: string;
+    url?: string;
+    tag?: string;
+  }) => {
+    const { sendVendorPush } = await import("@/lib/push");
+    return sendVendorPush(payload.vendorId, {
+      title: payload.title,
+      body: payload.body,
+      url: payload.url,
+      tag: payload.tag,
+    });
+  },
+});

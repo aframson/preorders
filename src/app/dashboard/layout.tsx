@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Logo } from "@/components/brand/logo";
 import { BottomTabs, Sidebar } from "@/components/dashboard/nav";
 import { PayoutVerificationBanner } from "@/components/dashboard/payout-verification-banner";
+import { RegisterServiceWorker } from "@/components/dashboard/register-service-worker";
 import { requireVendor } from "@/lib/auth";
 
 export default async function DashboardLayout({
@@ -12,6 +13,7 @@ export default async function DashboardLayout({
 
   return (
     <div className="flex min-h-dvh flex-col lg:flex-row">
+      <RegisterServiceWorker />
       <header className="border-b border-border px-5 py-4 lg:hidden">
         <Link href="/dashboard" aria-label="Dashboard">
           <Logo />

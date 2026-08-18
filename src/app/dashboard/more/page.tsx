@@ -2,6 +2,7 @@ import { BadgeCheck, ExternalLink, LogOut, ShieldAlert } from "lucide-react";
 import Link from "next/link";
 
 import { signOut } from "@/app/(auth)/login/actions";
+import { PushEnableCard } from "@/components/dashboard/push-enable-card";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { CopyButton } from "@/components/share/copy-button";
 import { Button, ButtonLink } from "@/components/ui/button";
@@ -62,6 +63,15 @@ export default async function MorePage() {
               Edit details
             </ButtonLink>
           </div>
+        </CardBody>
+      </Card>
+
+      <Card>
+        <CardHeader title="Push alerts" />
+        <CardBody>
+          <PushEnableCard
+            vapidPublicKey={process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? null}
+          />
         </CardBody>
       </Card>
 

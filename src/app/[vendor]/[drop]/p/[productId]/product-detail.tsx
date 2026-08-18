@@ -23,6 +23,7 @@ import {
   resolveMeasurement,
   sumPriceDelta,
 } from "@/lib/variants";
+import { signalBagAdd } from "./bag-signal";
 
 function initialSelection(product: PublicProduct): Record<string, string> {
   const initial: Record<string, string> = {};
@@ -57,12 +58,16 @@ export function ProductDetail({
   batch,
   checkoutHref,
   shopHref,
+  vendorId,
+  dropTitle,
 }: {
   product: PublicProduct;
   batch: PublicBatch | null;
   checkoutHref: string;
   /** Drop catalog — return here after add so the buyer can keep shopping. */
   shopHref: string;
+  vendorId: string;
+  dropTitle: string;
 }) {
   const router = useRouter();
   const { add, lines: cartLines, count } = useCart();
@@ -160,6 +165,13 @@ export function ProductDetail({
       imagePath: image?.path ?? product.images[0]?.path ?? null,
       weightGrams: measurement.weightGrams,
       volumeCm3: measurement.volumeCm3,
+    });
+
+    void signalBagAdd({
+      vendorId,
+      productName: product.name,
+      qty,
+      dropTitle,
     });
 
     toast.success(

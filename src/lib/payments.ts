@@ -253,6 +253,13 @@ export async function reconcilePayment(params: {
     payment.type === "goods" ? "goods" : "freight",
   ).catch((error) => console.error("[notify] order paid", error));
 
+  if (payment.type === "goods") {
+    const { notifyVendorOrderPaid } = await import("@/lib/vendor-notify");
+    void notifyVendorOrderPaid(payment.order_id).catch((error) =>
+      console.error("[notify] vendor push paid", error),
+    );
+  }
+
   return {
     outcome: "applied",
     orderId: payment.order_id,
