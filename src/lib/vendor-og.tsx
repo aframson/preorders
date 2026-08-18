@@ -13,8 +13,9 @@ const INK = "#1A1614";
 const MUTED = "#6B615C";
 const SUBTLE = "#9A8F88";
 const AUBERGINE = "#5A2A4E";
-const OPEN_BG = "#ECFDF5";
-const OPEN_FG = "#047857";
+const AUBERGINE_DEEP = "#3B1B33";
+const OPEN = "#047857";
+const OPEN_TINT = "#C6F6DF";
 
 function initials(name: string): string {
   return name
@@ -29,10 +30,17 @@ function formatRating(value: number): string {
   return (Math.round(value * 10) / 10).toFixed(1);
 }
 
-/** Vendor profile share card — business name + live batch signal. */
+function nameSize(name: string): number {
+  if (name.length > 28) return 52;
+  if (name.length > 18) return 64;
+  return 76;
+}
+
+/** Vendor profile share card — bold name + loud open-batch panel. */
 export function VendorOgCard({ card }: { card: VendorShareCard | null }) {
   const name = card?.businessName ?? "Preorders vendor";
   const openCount = card?.openBatchCount ?? 0;
+  const openTitles = card?.openDropTitles ?? [];
 
   return (
     <div
@@ -45,26 +53,39 @@ export function VendorOgCard({ card }: { card: VendorShareCard | null }) {
         overflow: "hidden",
       }}
     >
+      {/* Left brand rail */}
       <div
         style={{
           position: "absolute",
-          right: -100,
-          top: -80,
-          width: 480,
-          height: 480,
+          left: 0,
+          top: 0,
+          bottom: 0,
+          width: 18,
+          background: AUBERGINE,
+          display: "flex",
+        }}
+      />
+
+      {/* Soft atmosphere */}
+      <div
+        style={{
+          position: "absolute",
+          right: -60,
+          top: -120,
+          width: 420,
+          height: 420,
           borderRadius: 999,
           background: "#F3E8EF",
-          opacity: 0.85,
           display: "flex",
         }}
       />
       <div
         style={{
           position: "absolute",
-          left: -120,
-          bottom: -140,
-          width: 360,
-          height: 360,
+          left: 80,
+          bottom: -180,
+          width: 380,
+          height: 380,
           borderRadius: 999,
           background: MUTED_SURFACE,
           display: "flex",
@@ -74,19 +95,21 @@ export function VendorOgCard({ card }: { card: VendorShareCard | null }) {
       <div
         style={{
           display: "flex",
-          flexDirection: "column",
-          justifyContent: "space-between",
           width: "100%",
           height: "100%",
-          padding: 64,
+          padding: "48px 48px 48px 56px",
           position: "relative",
+          gap: 36,
         }}
       >
+        {/* Main column */}
         <div
           style={{
             display: "flex",
-            alignItems: "center",
+            flexDirection: "column",
             justifyContent: "space-between",
+            flex: 1,
+            minWidth: 0,
           }}
         >
           <div
@@ -95,33 +118,34 @@ export function VendorOgCard({ card }: { card: VendorShareCard | null }) {
               alignItems: "center",
               gap: 12,
               color: AUBERGINE,
-              fontSize: 26,
-              fontWeight: 700,
+              fontSize: 24,
+              fontWeight: 800,
+              letterSpacing: "-0.02em",
             }}
           >
             <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
               <div
                 style={{
-                  width: 22,
-                  height: 4,
-                  borderRadius: 2,
+                  width: 24,
+                  height: 5,
+                  borderRadius: 3,
                   background: AUBERGINE,
                 }}
               />
               <div
                 style={{
-                  width: 22,
-                  height: 4,
-                  borderRadius: 2,
+                  width: 24,
+                  height: 5,
+                  borderRadius: 3,
                   background: AUBERGINE,
                   opacity: 0.65,
                 }}
               />
               <div
                 style={{
-                  width: 22,
-                  height: 4,
-                  borderRadius: 2,
+                  width: 24,
+                  height: 5,
+                  borderRadius: 3,
                   background: AUBERGINE,
                   opacity: 0.35,
                 }}
@@ -130,153 +154,288 @@ export function VendorOgCard({ card }: { card: VendorShareCard | null }) {
             Preorders
           </div>
 
-          <div
-            style={{
-              display: "flex",
-              background: openCount > 0 ? OPEN_BG : MUTED_SURFACE,
-              color: openCount > 0 ? OPEN_FG : MUTED,
-              fontSize: 22,
-              fontWeight: 700,
-              padding: "12px 18px",
-              borderRadius: 999,
-            }}
-          >
-            {openCount > 0
-              ? `${openCount} open batch${openCount === 1 ? "" : "es"}`
-              : "Batches coming soon"}
-          </div>
-        </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 28 }}>
+            {card?.logoUrl ? (
+              <img
+                src={card.logoUrl}
+                width={168}
+                height={168}
+                alt=""
+                style={{
+                  width: 168,
+                  height: 168,
+                  borderRadius: 36,
+                  objectFit: "cover",
+                  border: `4px solid ${SURFACE}`,
+                  background: SURFACE,
+                }}
+              />
+            ) : (
+              <div
+                style={{
+                  display: "flex",
+                  width: 168,
+                  height: 168,
+                  borderRadius: 36,
+                  alignItems: "center",
+                  justifyContent: "center",
+                  background: AUBERGINE,
+                  color: CREAM,
+                  fontSize: 56,
+                  fontWeight: 800,
+                }}
+              >
+                {initials(name)}
+              </div>
+            )}
 
-        <div style={{ display: "flex", alignItems: "center", gap: 36 }}>
-          {card?.logoUrl ? (
-            // next/og ImageResponse accepts <img> with remote public URLs.
-            <img
-              src={card.logoUrl}
-              width={148}
-              height={148}
-              alt=""
-              style={{
-                width: 148,
-                height: 148,
-                borderRadius: 999,
-                objectFit: "cover",
-                border: `3px solid ${BORDER}`,
-                background: SURFACE,
-              }}
-            />
-          ) : (
             <div
               style={{
                 display: "flex",
-                width: 148,
-                height: 148,
-                borderRadius: 999,
-                alignItems: "center",
-                justifyContent: "center",
-                background: "#F3E8EF",
-                color: AUBERGINE,
-                fontSize: 48,
-                fontWeight: 800,
-                border: `3px solid ${BORDER}`,
+                flexDirection: "column",
+                gap: 12,
+                flex: 1,
               }}
             >
-              {initials(name)}
-            </div>
-          )}
-
-          <div
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              gap: 14,
-              flex: 1,
-            }}
-          >
-            <div
-              style={{
-                fontSize: 64,
-                fontWeight: 800,
-                color: INK,
-                lineHeight: 1.05,
-                letterSpacing: "-0.035em",
-              }}
-            >
-              {name}
-            </div>
-            <div style={{ fontSize: 26, color: MUTED }}>
-              Preorder batches · pay goods now, shipping when they land
+              <div
+                style={{
+                  fontSize: 22,
+                  fontWeight: 700,
+                  color: AUBERGINE,
+                  letterSpacing: "0.08em",
+                  textTransform: "uppercase",
+                }}
+              >
+                Vendor shop
+              </div>
+              <div
+                style={{
+                  fontSize: nameSize(name),
+                  fontWeight: 800,
+                  color: INK,
+                  lineHeight: 0.98,
+                  letterSpacing: "-0.045em",
+                }}
+              >
+                {name}
+              </div>
+              <div
+                style={{
+                  fontSize: 24,
+                  color: MUTED,
+                  fontWeight: 600,
+                }}
+              >
+                {card ? `${card.slug}.preorders` : "on Preorders"}
+              </div>
             </div>
           </div>
-        </div>
 
-        <div
-          style={{
-            display: "flex",
-            alignItems: "flex-end",
-            justifyContent: "space-between",
-            gap: 24,
-          }}
-        >
-          <div style={{ display: "flex", gap: 14 }}>
+          <div style={{ display: "flex", gap: 16 }}>
             {card && card.reviewCount > 0 && card.ratingAverage != null ? (
-              <StatChip
-                label={`${formatRating(card.ratingAverage)}★`}
-                detail={`${card.reviewCount} review${card.reviewCount === 1 ? "" : "s"}`}
+              <MetaPill
+                value={`${formatRating(card.ratingAverage)}★`}
+                label={`${card.reviewCount} review${card.reviewCount === 1 ? "" : "s"}`}
               />
             ) : null}
             {card && card.batchesDelivered > 0 ? (
-              <StatChip
-                label={`${card.batchesDelivered}`}
-                detail={`batch${card.batchesDelivered === 1 ? "" : "es"} delivered`}
+              <MetaPill
+                value={`${card.batchesDelivered}`}
+                label={`delivered`}
               />
-            ) : null}
-            {card?.openDropTitles.map((title) => (
-              <StatChip key={title} label={title} detail="Open now" accent />
-            ))}
+            ) : (
+              <MetaPill value="Pay now" label="Ship later" />
+            )}
           </div>
+        </div>
 
-          <div style={{ fontSize: 22, color: SUBTLE, fontWeight: 600 }}>
-            {card ? `${card.slug} on Preorders` : "on Preorders"}
-          </div>
+        {/* Bold open-batch panel */}
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            width: 380,
+            borderRadius: 28,
+            background: openCount > 0 ? AUBERGINE_DEEP : MUTED_SURFACE,
+            padding: 36,
+            justifyContent: "space-between",
+            border: openCount > 0 ? "none" : `2px solid ${BORDER}`,
+          }}
+        >
+          {openCount > 0 ? (
+            <>
+              <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 10,
+                    background: OPEN,
+                    color: "#FFFFFF",
+                    alignSelf: "flex-start",
+                    padding: "10px 16px",
+                    borderRadius: 999,
+                    fontSize: 18,
+                    fontWeight: 800,
+                    letterSpacing: "0.06em",
+                  }}
+                >
+                  ● LIVE
+                </div>
+                <div
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 4,
+                  }}
+                >
+                  <div
+                    style={{
+                      fontSize: 72,
+                      fontWeight: 800,
+                      color: CREAM,
+                      lineHeight: 0.95,
+                      letterSpacing: "-0.04em",
+                    }}
+                  >
+                    {openCount}
+                  </div>
+                  <div
+                    style={{
+                      fontSize: 30,
+                      fontWeight: 800,
+                      color: CREAM,
+                      letterSpacing: "-0.02em",
+                    }}
+                  >
+                    open batch{openCount === 1 ? "" : "es"}
+                  </div>
+                  <div
+                    style={{
+                      marginTop: 8,
+                      fontSize: 20,
+                      color: "#D0A8C4",
+                      fontWeight: 600,
+                    }}
+                  >
+                    Order now · pay goods today
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                {openTitles.length > 0
+                  ? openTitles.map((title) => (
+                      <div
+                        key={title}
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 12,
+                          background: "rgba(253,251,248,0.1)",
+                          borderRadius: 16,
+                          padding: "14px 16px",
+                        }}
+                      >
+                        <div
+                          style={{
+                            width: 10,
+                            height: 10,
+                            borderRadius: 999,
+                            background: OPEN_TINT,
+                            display: "flex",
+                          }}
+                        />
+                        <div
+                          style={{
+                            fontSize: 22,
+                            fontWeight: 700,
+                            color: CREAM,
+                            letterSpacing: "-0.02em",
+                          }}
+                        >
+                          {title}
+                        </div>
+                      </div>
+                    ))
+                  : null}
+              </div>
+            </>
+          ) : (
+            <>
+              <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                <div
+                  style={{
+                    fontSize: 20,
+                    fontWeight: 800,
+                    color: MUTED,
+                    letterSpacing: "0.08em",
+                  }}
+                >
+                  NEXT UP
+                </div>
+                <div
+                  style={{
+                    fontSize: 42,
+                    fontWeight: 800,
+                    color: INK,
+                    lineHeight: 1.05,
+                    letterSpacing: "-0.03em",
+                  }}
+                >
+                  Batches coming soon
+                </div>
+                <div style={{ fontSize: 22, color: MUTED, fontWeight: 600 }}>
+                  Bookmark this shop — open windows show here first.
+                </div>
+              </div>
+              <div
+                style={{
+                  display: "flex",
+                  background: SURFACE,
+                  border: `1px solid ${BORDER}`,
+                  borderRadius: 16,
+                  padding: "16px 18px",
+                  color: AUBERGINE,
+                  fontSize: 20,
+                  fontWeight: 800,
+                }}
+              >
+                {card ? `${card.slug} on Preorders` : "on Preorders"}
+              </div>
+            </>
+          )}
         </div>
       </div>
     </div>
   );
 }
 
-function StatChip({
-  label,
-  detail,
-  accent = false,
-}: {
-  label: string;
-  detail: string;
-  accent?: boolean;
-}) {
+function MetaPill({ value, label }: { value: string; label: string }) {
   return (
     <div
       style={{
         display: "flex",
         flexDirection: "column",
-        gap: 4,
-        background: accent ? OPEN_BG : SURFACE,
-        border: `1px solid ${accent ? "#A7F3D0" : BORDER}`,
+        gap: 2,
+        background: SURFACE,
+        border: `2px solid ${BORDER}`,
         borderRadius: 18,
-        padding: "14px 18px",
-        minWidth: 120,
+        padding: "14px 20px",
+        minWidth: 128,
       }}
     >
       <div
         style={{
-          fontSize: 24,
+          fontSize: 28,
           fontWeight: 800,
-          color: accent ? OPEN_FG : INK,
-          letterSpacing: "-0.02em",
+          color: INK,
+          letterSpacing: "-0.03em",
         }}
       >
-        {label}
+        {value}
       </div>
-      <div style={{ fontSize: 16, color: accent ? OPEN_FG : MUTED }}>{detail}</div>
+      <div style={{ fontSize: 16, color: SUBTLE, fontWeight: 600 }}>{label}</div>
     </div>
   );
 }
