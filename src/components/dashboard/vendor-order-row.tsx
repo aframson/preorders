@@ -6,7 +6,7 @@ import Link from "next/link";
 import { MarkReceivedButton } from "@/app/o/[token]/mark-received-button";
 import { ButtonLink } from "@/components/ui/button";
 import { StatusPill } from "@/components/ui/status-pill";
-import { formatGhs } from "@/lib/money";
+import { formatGhsCompact } from "@/lib/money";
 import { formatLocalPhone } from "@/lib/phone";
 import { absoluteUrl, orderPath, whatsappChatLink } from "@/lib/site";
 import {
@@ -30,62 +30,74 @@ export type VendorOrderRowData = {
   batchNumber: number;
 };
 
+/** Dense edge-to-edge row — built for long order lists. */
 export function VendorOrderRow({ order }: { order: VendorOrderRowData }) {
   const feedbackHref = whatsappChatLink(
     order.phone,
     `Hi! Your order ${order.code} is marked received. Please rate your experience here: ${absoluteUrl(orderPath(order.publicToken))}#feedback`,
   );
 
+  const needsAction =
+    order.status === "freight_paid" || order.status === "collected";
+
   return (
-    <li className="rounded-card border border-border bg-surface px-5 py-4">
-      <div className="flex flex-wrap items-start justify-between gap-4">
+    <li className="border-b border-border last:border-b-0">
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-2 px-5 py-2.5 lg:px-8">
         <Link
           href={`/o/${order.publicToken}`}
           className="min-w-0 flex-1 transition-colors hover:text-brand-700"
         >
-          <p className="font-medium text-ink">{order.customerName}</p>
-          <p className="mt-0.5 text-sm text-ink-muted" data-numeric>
-            {order.code} · {formatLocalPhone(order.phone)}
-          </p>
-          <p className="mt-0.5 text-xs text-ink-subtle">
-            {order.dropTitle} · Batch {order.batchNumber} ·{" "}
-            {formatAccraDateTime(order.createdAt)}
+          <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+            <p className="truncate text-sm font-medium text-ink">
+              {order.customerName}
+            </p>
+            <p className="truncate text-xs text-ink-muted" data-numeric>
+              {order.code}
+            </p>
+          </div>
+          <p className="truncate text-xs text-ink-subtle">
+            {formatLocalPhone(order.phone)} · {order.dropTitle} · B
+            {order.batchNumber} · {formatAccraDateTime(order.createdAt)}
           </p>
         </Link>
 
-        <div className="flex items-center gap-4">
-          <p className="font-display font-semibold text-ink" data-numeric>
-            {formatGhs(order.goodsTotal)}
-          </p>
-          <StatusPill tone={ORDER_STATUS[order.status].tone}>
-            {orderStatusLabel(order.status, order.fulfilment, "vendor")}
-          </StatusPill>
-        </div>
+        <p
+          className="shrink-0 text-sm font-semibold text-ink tabular-nums"
+          data-numeric
+        >
+          {formatGhsCompact(order.goodsTotal)}
+        </p>
+        <StatusPill
+          tone={ORDER_STATUS[order.status].tone}
+          className="shrink-0 !px-2 !py-0.5 !text-[11px]"
+        >
+          {orderStatusLabel(order.status, order.fulfilment, "vendor")}
+        </StatusPill>
       </div>
 
-      {order.status === "freight_paid" && (
-        <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center">
-          <MarkReceivedButton
-            token={order.publicToken}
-            fulfilment={order.fulfilment}
-            actor="vendor"
-            className="sm:max-w-xs"
-          />
-        </div>
-      )}
-
-      {order.status === "collected" && (
-        <div className="mt-4">
-          <ButtonLink
-            href={feedbackHref}
-            variant="secondary"
-            size="sm"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <MessageCircle className="size-4" aria-hidden />
-            Ask for a rating
-          </ButtonLink>
+      {needsAction && (
+        <div className="flex flex-wrap items-center gap-2 border-t border-border/70 bg-surface-muted/40 px-5 py-2 lg:px-8">
+          {order.status === "freight_paid" && (
+            <MarkReceivedButton
+              token={order.publicToken}
+              fulfilment={order.fulfilment}
+              actor="vendor"
+              className="!h-8 !px-3 !text-xs sm:max-w-xs"
+            />
+          )}
+          {order.status === "collected" && (
+            <ButtonLink
+              href={feedbackHref}
+              variant="secondary"
+              size="sm"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="!h-8 !px-3 !text-xs"
+            >
+              <MessageCircle className="size-3.5" aria-hidden />
+              Ask for rating
+            </ButtonLink>
+          )}
         </div>
       )}
     </li>

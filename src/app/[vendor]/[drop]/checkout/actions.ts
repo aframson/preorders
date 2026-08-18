@@ -146,18 +146,25 @@ export async function placeOrder(
       console.error("[notify] order placed", error),
     );
 
-    const paymentUrl = await startGoodsPayment(order.id);
-    if (paymentUrl) {
-      destination = paymentUrl;
-    } else if (isPaystackConfigured()) {
-      return {
-        error:
-          "Payment could not be started. Your order is held — open it from your confirmation link and try Pay again.",
-      };
-    } else {
-      // Local / no keys: land on the order page so the rest of the flow is
-      // still walkable without a Paystack account.
+    const intent = String(formData.get("intent") ?? "pay");
+    if (intent === "hold") {
+      // Buyer can keep shopping across devices later via the order link;
+      // goods payment stays open until the hold expires.
       destination = orderPath(order.publicToken);
+    } else {
+      const paymentUrl = await startGoodsPayment(order.id);
+      if (paymentUrl) {
+        destination = paymentUrl;
+      } else if (isPaystackConfigured()) {
+        return {
+          error:
+            "Payment could not be started. Your order is held — open it from your confirmation link and try Pay again.",
+        };
+      } else {
+        // Local / no keys: land on the order page so the rest of the flow is
+        // still walkable without a Paystack account.
+        destination = orderPath(order.publicToken);
+      }
     }
   } catch (error) {
     if (error instanceof CheckoutError) return { error: error.message };

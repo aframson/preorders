@@ -7,7 +7,8 @@
 -- The tracking URL therefore carries its own high-entropy token, while the
 -- code stays as the label everyone quotes.
 
-create extension if not exists pgcrypto;
+-- Hosted Supabase installs extensions in `extensions`, not on public search_path.
+create extension if not exists pgcrypto with schema extensions;
 
 create or replace function public.generate_order_token()
 returns text
@@ -15,7 +16,7 @@ language sql
 volatile
 as $$
   -- ~132 bits, URL-safe, no padding.
-  select translate(encode(gen_random_bytes(17), 'base64'), '+/=', '-_');
+  select translate(encode(extensions.gen_random_bytes(17), 'base64'), '+/=', '-_');
 $$;
 
 alter table public.orders

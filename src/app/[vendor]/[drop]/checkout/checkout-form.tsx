@@ -322,11 +322,24 @@ export function CheckoutForm({
             {state.error}
           </p>
         )}
-        <Button type="submit" size="lg" block loading={pending}>
-          Pay {formatGhs(subtotal)}
+        <Button type="submit" name="intent" value="pay" size="lg" block loading={pending}>
+          Pay {formatGhs(subtotal)} now
+        </Button>
+        <Button
+          type="submit"
+          name="intent"
+          value="hold"
+          size="lg"
+          block
+          variant="secondary"
+          loading={pending}
+          className="mt-2"
+        >
+          Save order · pay later
         </Button>
         <p className="py-2 text-center text-xs text-ink-subtle">
-          Mobile money or card &middot; secured by Paystack
+          Add every item you want first. Pay now or hold the order and pay from
+          your tracking link · MoMo or card via Paystack
         </p>
       </StickyActionBar>
     </form>

@@ -56,13 +56,16 @@ export function ProductDetail({
   product,
   batch,
   checkoutHref,
+  shopHref,
 }: {
   product: PublicProduct;
   batch: PublicBatch | null;
   checkoutHref: string;
+  /** Drop catalog — return here after add so the buyer can keep shopping. */
+  shopHref: string;
 }) {
   const router = useRouter();
-  const { add, lines: cartLines } = useCart();
+  const { add, lines: cartLines, count } = useCart();
 
   const groups = useMemo(
     () => groupVariants(product.variants),
@@ -161,10 +164,17 @@ export function ProductDetail({
 
     toast.success(
       already
-        ? `${product.name} · ${nextQty} in your order`
-        : `${product.name} added`,
+        ? `${product.name} · ${nextQty} in your bag`
+        : `${product.name} added to your bag`,
+      {
+        description: "Add more products, then review when you are ready.",
+        action: {
+          label: "Review",
+          onClick: () => router.push(checkoutHref),
+        },
+      },
     );
-    router.back();
+    router.push(shopHref);
   }
 
   return (
@@ -327,8 +337,14 @@ export function ProductDetail({
                 ? "Not enough left"
                 : (
                     <>
-                      Add to order &middot;{" "}
+                      Add to bag &middot;{" "}
                       <span data-numeric>{formatGhs(unitPrice * qty)}</span>
+                      {count > 0 ? (
+                        <span className="font-normal text-white/75">
+                          {" "}
+                          ({count} in bag)
+                        </span>
+                      ) : null}
                     </>
                   )}
           </Button>

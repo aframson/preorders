@@ -282,7 +282,7 @@ export function CartBar({
           {count} item{count === 1 ? "" : "s"} &middot; {formatGhs(subtotal)}
         </span>
         <span className="text-white/80">&middot;</span>
-        Review order
+        Review bag
       </Link>
     </div>
   );

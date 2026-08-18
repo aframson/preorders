@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { IBM_Plex_Sans, Raleway } from "next/font/google";
 import { Toaster } from "sonner";
+import { NavigationProgress } from "@/components/navigation-progress";
 import "./globals.css";
 
 const sans = IBM_Plex_Sans({
@@ -40,6 +41,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={`${sans.variable} ${display.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-canvas text-ink">
+        <NavigationProgress />
         {children}
         <Toaster
           position="top-center"

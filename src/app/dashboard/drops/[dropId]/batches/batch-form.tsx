@@ -3,7 +3,8 @@
 import { useActionState, useState } from "react";
 
 import { Button } from "@/components/ui/button";
-import { Field, Input, Select } from "@/components/ui/field";
+import { CutoffCalendar } from "@/components/ui/cutoff-calendar";
+import { Field, Select } from "@/components/ui/field";
 import { FREIGHT_MODES, type FreightMode } from "@/lib/freight";
 import { createBatch, updateBatch, type ActionState } from "./actions";
 
@@ -33,6 +34,10 @@ export function BatchForm({
     {},
   );
   const [mode, setMode] = useState<FreightMode>(initial.freightMode);
+  const [closesAt, setClosesAt] = useState(initial.closesAt);
+  const [expectedDeliveryAt, setExpectedDeliveryAt] = useState(
+    initial.expectedDeliveryAt,
+  );
 
   return (
     <form action={submit} className="max-w-lg space-y-6">
@@ -63,12 +68,13 @@ export function BatchForm({
         hint="Ghana time. We close the batch for you at this moment."
         error={state.error}
       >
-        <Input
+        <CutoffCalendar
           id="closesAt"
           name="closesAt"
-          type="datetime-local"
+          mode="datetime"
           required
-          defaultValue={initial.closesAt}
+          value={closesAt}
+          onChange={setClosesAt}
         />
       </Field>
 
@@ -77,11 +83,12 @@ export function BatchForm({
         htmlFor="expectedDeliveryAt"
         hint="Optional, shown to customers as a rough window like 'late September'."
       >
-        <Input
+        <CutoffCalendar
           id="expectedDeliveryAt"
           name="expectedDeliveryAt"
-          type="date"
-          defaultValue={initial.expectedDeliveryAt}
+          mode="date"
+          value={expectedDeliveryAt}
+          onChange={setExpectedDeliveryAt}
         />
       </Field>
 

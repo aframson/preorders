@@ -1,9 +1,10 @@
-import { ClipboardList, Lock } from "lucide-react";
+import { ClipboardList } from "lucide-react";
 import { notFound } from "next/navigation";
 
 import { CopyButton } from "@/components/share/copy-button";
 import { ButtonLink } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
+import { LockedStamp } from "@/components/ui/locked-stamp";
 import { requireVendor } from "@/lib/auth";
 import { FREIGHT_MODES, formatBillableUnits } from "@/lib/freight";
 import { getBatchDetail, shippingOrders } from "@/lib/queries/batch";
@@ -30,11 +31,16 @@ export default async function ManifestPage({
 
   if (locked) {
     return (
-      <EmptyState
-        icon={Lock}
-        title="Locked until the batch closes"
-        description="The buy-list is built from paid orders at cutoff, so it cannot change while people are still ordering."
-      />
+      <div className="flex flex-col items-center justify-center border border-dashed border-border bg-surface px-6 py-14 text-center">
+        <LockedStamp size="lg" className="mb-4" />
+        <h3 className="font-display text-base font-semibold text-ink">
+          Locked until the batch closes
+        </h3>
+        <p className="mt-1 max-w-sm text-sm leading-relaxed text-ink-muted">
+          The buy-list is built from paid orders at cutoff, so it cannot change
+          while people are still ordering.
+        </p>
+      </div>
     );
   }
 

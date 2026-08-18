@@ -124,3 +124,16 @@ export function formatDeliveryWindow(date: DateInput): string {
   if (day <= 20) return `mid ${month}`;
   return `late ${month}`;
 }
+
+// Accra calendar helpers live in `./accra` for a stable client import surface.
+export {
+  type AccraParts,
+  getAccraParts,
+  toAccraDateKey,
+  fromAccraDateKey,
+  formatAccraLocal,
+  parseAccraLocal,
+  accraWeekdayMondayFirst,
+  daysInAccraMonth,
+} from "./accra";
+

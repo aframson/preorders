@@ -196,7 +196,7 @@ otp_expiry = 3600
 # content_path = "./supabase/templates/invite.html"
 
 [auth.email.template.magic_link]
-subject = "Your Preorders sign-in code"
+subject = "Your Preorders sign-in code: {{ .Token }}"
 content_path = "./supabase/templates/magic_link.html"
 
 [auth.sms]

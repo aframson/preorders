@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { MessageCircle } from "lucide-react";
-import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import {
@@ -11,6 +10,7 @@ import { CartBar } from "@/components/public/cart";
 import { NotifyMeForm } from "@/components/public/notify-me-form";
 import { PublicProductCatalog } from "@/components/public/public-product-catalog";
 import { VendorHeader } from "@/components/public/vendor-header";
+import { NavChip } from "@/components/ui/nav-chip";
 import { cn } from "@/lib/cn";
 import { getPublicDrop } from "@/lib/queries/public-drop";
 import { dropPath, vendorPath, whatsappChatLink } from "@/lib/site";
@@ -88,17 +88,17 @@ export default async function PublicDropPage({
 
         {usedCategories.length > 0 && (
           <div className="flex gap-2 overflow-x-auto border-b border-border bg-canvas/95 px-5 py-3 backdrop-blur scrollbar-none">
-            <Chip href={base} active={!activeCategory}>
+            <NavChip href={base} active={!activeCategory}>
               All
-            </Chip>
+            </NavChip>
             {usedCategories.map((category) => (
-              <Chip
+              <NavChip
                 key={category.id}
                 href={`${base}?category=${category.id}`}
                 active={activeCategory === category.id}
               >
                 {category.name}
-              </Chip>
+              </NavChip>
             ))}
           </div>
         )}
@@ -166,30 +166,5 @@ export default async function PublicDropPage({
         openBatch && <CartBar checkoutHref={`${base}/checkout`} />
       )}
     </div>
-  );
-}
-
-function Chip({
-  href,
-  active,
-  children,
-}: {
-  href: string;
-  active: boolean;
-  children: React.ReactNode;
-}) {
-  return (
-    <Link
-      href={href}
-      aria-current={active ? "true" : undefined}
-      className={cn(
-        "shrink-0 rounded-full px-3.5 py-2 text-sm transition-colors",
-        active
-          ? "bg-brand-700 font-medium text-white"
-          : "bg-surface-muted text-ink-muted",
-      )}
-    >
-      {children}
-    </Link>
   );
 }

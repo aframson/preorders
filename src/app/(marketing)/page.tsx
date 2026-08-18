@@ -9,6 +9,7 @@ import {
   Wallet,
 } from "lucide-react";
 
+import { BeforeAfterSplit } from "@/components/marketing/before-after-split";
 import { FreightExplainer } from "@/components/marketing/freight-explainer";
 import { FeatureStage } from "@/components/marketing/feature-stage";
 import {
@@ -18,9 +19,12 @@ import {
   ScheduleMockup,
 } from "@/components/marketing/feature-mockups";
 import { HeroChatStage } from "@/components/marketing/hero-chat-stage";
+import { HeroCalendarMockup } from "@/components/marketing/hero-calendar-mockup";
+import { HeroDashboardMockup } from "@/components/marketing/hero-dashboard-mockup";
+import { LiveManifestStrip } from "@/components/marketing/live-manifest-strip";
 import { ManifestComparison } from "@/components/marketing/manifest-comparison";
+import { PlatformPeek } from "@/components/marketing/platform-peek";
 import { VendorSearch } from "@/components/marketing/vendor-search";
-import { WhatsAppUnfurl } from "@/components/marketing/whatsapp-unfurl";
 import { ButtonLink } from "@/components/ui/button";
 import { Container } from "@/components/ui/container";
 import { StatusPill } from "@/components/ui/status-pill";
@@ -119,7 +123,7 @@ const FAQ = [
   },
   {
     q: "Am I replacing WhatsApp?",
-    a: "Not at all. You keep selling on WhatsApp exactly as you do now. This just replaces the part where you count orders in a notebook.",
+    a: "No. WhatsApp stays how you sell. This is the ops layer underneath — paid orders, buy-lists, tracking, and shipping — so chat stays chat.",
   },
   {
     q: "What happens to my link when a batch closes?",
@@ -135,13 +139,13 @@ export default function HomePage() {
         <Container className="relative z-10 h-full lg:grid lg:grid-cols-[minmax(0,34rem)_minmax(0,1fr)] lg:items-stretch lg:gap-x-24">
           <div className="relative z-20 max-w-xl py-10 lg:self-center">
             <h1 className="font-display text-5xl leading-[0.98] font-bold tracking-tight sm:text-6xl lg:text-[4.75rem]">
-              Stop counting orders in WhatsApp.
+              Run preorders like an operation.
             </h1>
 
             <p className="mt-5 text-lg leading-relaxed text-ink-muted">
-              WhatsApp is for selling. This runs the batch: goods paid now, a
-              tracking page for every customer, a buy-list for your supplier,
-              and shipping split by weight when the bill arrives.
+              Paid catalog, automatic cutoff, supplier buy-list, fair freight
+              when the bill lands. One link for customers. The board for you —
+              not another week of chat screenshots.
             </p>
 
             <div className="mt-8">
@@ -150,7 +154,7 @@ export default function HomePage() {
 
             <div className="mt-5 flex flex-col gap-3 sm:flex-row">
               <ButtonLink href="/onboarding" size="lg">
-                Create your batch link
+                Start your preorder ops
                 <ArrowRight className="size-4" aria-hidden />
               </ButtonLink>
               <ButtonLink href="/akosua/china-run" size="lg" variant="secondary">
@@ -166,22 +170,40 @@ export default function HomePage() {
 
           <div className="relative hidden h-full lg:block">
             <HeroChatStage
-              className="hero-chat-fade pointer-events-none absolute top-[16%] -bottom-[18%] -left-[12%] w-[min(980px,78vw)] origin-top-left"
+              className="hero-chat-fade pointer-events-none absolute top-[6%] -bottom-[10%] -left-[10%] z-0 w-[min(900px,70vw)] origin-top-left"
             >
-              <WhatsAppUnfurl className="h-full" />
+              <HeroDashboardMockup className="h-full" />
+            </HeroChatStage>
+            <HeroChatStage
+              variant="calendar"
+              className="pointer-events-none absolute top-[38%] -bottom-[28%] left-[2%] z-20 w-[min(680px,58vw)] origin-top-left"
+            >
+              <HeroCalendarMockup className="hero-cal-fade h-full min-h-[34rem]" />
             </HeroChatStage>
           </div>
         </Container>
 
         <div
-          className="relative mt-8 h-[min(48rem,132vw)] overflow-hidden lg:hidden"
+          className="relative mt-8 h-[min(44rem,128vw)] overflow-hidden lg:hidden"
           aria-hidden
         >
-          <HeroChatStage className="hero-chat-fade pointer-events-none absolute top-[12%] -left-[20%] w-[148%] origin-top-left">
-            <WhatsAppUnfurl />
+          <HeroChatStage className="hero-chat-fade pointer-events-none absolute top-[0%] -left-[16%] z-0 w-[130%] origin-top-left">
+            <HeroDashboardMockup />
+          </HeroChatStage>
+          <HeroChatStage
+            variant="calendar"
+            className="pointer-events-none absolute top-[40%] -bottom-[18%] -left-[6%] z-20 w-[112%] origin-top-left"
+          >
+            <HeroCalendarMockup className="hero-cal-fade h-full min-h-[30rem]" />
           </HeroChatStage>
         </div>
       </section>
+
+      <BeforeAfterSplit />
+
+      <PlatformPeek />
+
+      <LiveManifestStrip />
 
       {/* Problem ---------------------------------------------------------- */}
       <section className="py-16">
@@ -190,8 +212,8 @@ export default function HomePage() {
             You are not disorganised. The tool is wrong.
           </h2>
           <p className="mt-3 max-w-2xl text-ink-muted">
-            WhatsApp is brilliant for selling and terrible for bookkeeping.
-            Three things eat your week:
+            Social selling is brilliant for demand and terrible for running the
+            batch. Three things eat your week:
           </p>
 
           <div className="mt-8 grid gap-4 md:grid-cols-3">

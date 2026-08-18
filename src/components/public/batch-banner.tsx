@@ -83,7 +83,7 @@ export function DeliveryExpectation({ batch }: { batch: PublicBatch }) {
   if (!batch.expectedDeliveryAt) return null;
 
   return (
-    <p className="flex items-center gap-2 border-b border-border px-5 py-3 text-sm text-ink-muted">
+    <p className="flex items-center gap-2 border-b border-border bg-surface px-5 py-3 text-sm text-ink-muted">
       <PackageCheck className="size-4 shrink-0 text-ink-subtle" aria-hidden />
       Expected in Accra:{" "}
       <span className="font-medium text-ink">

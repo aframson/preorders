@@ -48,6 +48,7 @@ export default async function ProductPage({
         product={product}
         batch={data.openBatch}
         checkoutHref={`${base}/checkout`}
+        shopHref={base}
       />
     </div>
   );

@@ -9,6 +9,8 @@ import {
 
 import { ActionQueue, type ActionItem } from "@/components/dashboard/action-queue";
 import { BatchCard } from "@/components/dashboard/batch-card";
+import { HomeCalendarSheet } from "@/components/dashboard/home-calendar-sheet";
+import { VendorBatchCalendar } from "@/components/dashboard/vendor-batch-calendar";
 import { ShareSheet } from "@/components/share/share-sheet";
 import { ButtonLink } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -63,58 +65,78 @@ export default async function DashboardHome() {
         )
     : null;
 
+  const calendarBatches = batches.map((batch) => ({
+    id: batch.id,
+    dropId: batch.dropId,
+    dropTitle: batch.dropTitle,
+    number: batch.number,
+    status: batch.status,
+    opensAt: batch.opensAt,
+    closesAt: batch.closesAt,
+    expectedDeliveryAt: batch.expectedDeliveryAt,
+  }));
+
   return (
-    <div className="max-w-3xl space-y-8">
-      <div>
-        <p className="text-sm text-ink-muted">Welcome back</p>
-        <h1 className="font-display text-2xl font-bold tracking-tight text-ink">
-          {vendor.businessName}
-        </h1>
+    <div className="-mx-5 -my-6 grid min-h-[calc(100dvh-8rem)] grid-cols-1 items-stretch lg:-mx-8 lg:-my-8 xl:min-h-[calc(100dvh-0px)] xl:grid-cols-2">
+      <div className="min-w-0 space-y-8 border-b border-border px-5 py-6 lg:px-8 lg:py-8 xl:border-r xl:border-b-0">
+        <div>
+          <p className="text-sm text-ink-muted">Welcome back</p>
+          <h1 className="font-display text-2xl font-bold tracking-tight text-ink">
+            {vendor.businessName}
+          </h1>
+        </div>
+
+        {live ? (
+          <BatchCard
+            batch={{
+              id: live.id,
+              dropId: live.dropId,
+              number: live.number,
+              status: live.status,
+              opensAt: live.opensAt,
+              closesAt: live.closesAt,
+              ...batchTotals(live),
+            }}
+            className="rounded-none"
+          />
+        ) : (
+          <EmptyState
+            icon={CalendarClock}
+            title="No batch running"
+            description="Schedule a batch to start taking orders on your link."
+            action={
+              primaryDrop ? (
+                <ButtonLink href={`/dashboard/drops/${primaryDrop.id}/batches`}>
+                  Schedule a batch
+                </ButtonLink>
+              ) : (
+                <ButtonLink href="/dashboard/drops/new">Create a drop</ButtonLink>
+              )
+            }
+          />
+        )}
+
+        <section className="space-y-3">
+          <h2 className="font-display font-semibold text-ink">Needs you</h2>
+          <ActionQueue items={actions} />
+        </section>
+
+        {link && primaryDrop && (
+          <ShareSheet
+            url={link}
+            businessName={vendor.businessName}
+            dropTitle={primaryDrop.title}
+            batchNumber={live?.number}
+            statusImageHref={`${dropPath(vendor.slug, primaryDrop.slug)}/status-image`}
+          />
+        )}
       </div>
 
-      {live ? (
-        <BatchCard
-          batch={{
-            id: live.id,
-            dropId: live.dropId,
-            number: live.number,
-            status: live.status,
-            opensAt: live.opensAt,
-            closesAt: live.closesAt,
-            ...batchTotals(live),
-          }}
-        />
-      ) : (
-        <EmptyState
-          icon={CalendarClock}
-          title="No batch running"
-          description="Schedule a batch to start taking orders on your link."
-          action={
-            primaryDrop ? (
-              <ButtonLink href={`/dashboard/drops/${primaryDrop.id}/batches`}>
-                Schedule a batch
-              </ButtonLink>
-            ) : (
-              <ButtonLink href="/dashboard/drops/new">Create a drop</ButtonLink>
-            )
-          }
-        />
-      )}
+      <aside className="hidden min-h-0 min-w-0 flex-col xl:flex xl:min-h-full">
+        <VendorBatchCalendar batches={calendarBatches} />
+      </aside>
 
-      <section className="space-y-3">
-        <h2 className="font-display font-semibold text-ink">Needs you</h2>
-        <ActionQueue items={actions} />
-      </section>
-
-      {link && primaryDrop && (
-        <ShareSheet
-          url={link}
-          businessName={vendor.businessName}
-          dropTitle={primaryDrop.title}
-          batchNumber={live?.number}
-          statusImageHref={`${dropPath(vendor.slug, primaryDrop.slug)}/status-image`}
-        />
-      )}
+      <HomeCalendarSheet batches={calendarBatches} />
     </div>
   );
 }

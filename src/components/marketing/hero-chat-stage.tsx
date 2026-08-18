@@ -11,9 +11,12 @@ import { cn } from "@/lib/cn";
 export function HeroChatStage({
   className,
   children,
+  variant = "dashboard",
 }: {
   className?: string;
   children: React.ReactNode;
+  /** Calendar layer sits in front and lower than the board. */
+  variant?: "dashboard" | "calendar";
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const [inView, setInView] = useState(false);
@@ -22,9 +25,6 @@ export function HeroChatStage({
     const node = ref.current;
     if (!node) return;
 
-    // The observer fires once on observe, so reduced-motion visitors land on
-    // the settled pose without the state ever being written from the effect
-    // body, which would cascade a second render.
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)");
 
     const observer = new IntersectionObserver(
@@ -38,7 +38,11 @@ export function HeroChatStage({
   return (
     <div
       ref={ref}
-      className={cn("hero-mock-slide", inView && "is-in", className)}
+      className={cn(
+        variant === "calendar" ? "hero-cal-slide" : "hero-mock-slide",
+        inView && "is-in",
+        className,
+      )}
       aria-hidden
     >
       {children}

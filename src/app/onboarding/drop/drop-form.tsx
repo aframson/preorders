@@ -5,6 +5,7 @@ import { useActionState, useState } from "react";
 
 import { StepShell } from "@/components/onboarding/step-shell";
 import { Button } from "@/components/ui/button";
+import { CutoffCalendar } from "@/components/ui/cutoff-calendar";
 import { Field, Input } from "@/components/ui/field";
 import { cn } from "@/lib/cn";
 import { createFirstDrop, type ActionState } from "../actions";
@@ -128,13 +129,13 @@ export function DropForm({
           hint="At this time we close Batch 1 and open Batch 2 automatically with the same products."
           error={state.error}
         >
-          <Input
+          <CutoffCalendar
             id="closesAt"
             name="closesAt"
-            type="datetime-local"
+            mode="datetime"
             required
             value={closesAt}
-            onChange={(event) => setClosesAt(event.target.value)}
+            onChange={setClosesAt}
           />
         </Field>
 

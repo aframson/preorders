@@ -12,6 +12,7 @@ export type DashboardBatch = {
   status: BatchStatus;
   opensAt: string;
   closesAt: string;
+  expectedDeliveryAt: string | null;
   freightFinalisedAt: string | null;
   orders: {
     id: string;
@@ -35,7 +36,7 @@ export async function getDashboardBatches(
   const { data } = await supabase
     .from("drops")
     .select(
-      "id, slug, title, batches(id, number, status, opens_at, closes_at, freight_finalised_at, orders(id, status, goods_total, freight_amount, freight_paid_at))",
+      "id, slug, title, batches(id, number, status, opens_at, closes_at, expected_delivery_at, freight_finalised_at, orders(id, status, goods_total, freight_amount, freight_paid_at))",
     )
     .eq("vendor_id", vendorId)
     .is("archived_at", null);
@@ -53,6 +54,7 @@ export async function getDashboardBatches(
         status: batch.status,
         opensAt: batch.opens_at,
         closesAt: batch.closes_at,
+        expectedDeliveryAt: batch.expected_delivery_at,
         freightFinalisedAt: batch.freight_finalised_at,
         orders: (batch.orders ?? []).map((order) => ({
           id: order.id,

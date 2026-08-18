@@ -1,12 +1,14 @@
 -- Stable customer hub link (all of a buyer's orders with one vendor).
 -- Email is the durable key; phone remains unique for MoMo / WhatsApp contact.
 
+create extension if not exists pgcrypto with schema extensions;
+
 create or replace function public.generate_portal_token()
 returns text
 language sql
 volatile
 as $$
-  select translate(encode(gen_random_bytes(17), 'base64'), '+/=', '-_');
+  select translate(encode(extensions.gen_random_bytes(17), 'base64'), '+/=', '-_');
 $$;
 
 alter table public.customers

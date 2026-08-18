@@ -41,7 +41,7 @@ export function BatchCard({
     <Link
       href={`/dashboard/drops/${batch.dropId}/batches/${batch.id}`}
       className={cn(
-        "block rounded-card border border-border bg-surface p-5 transition-colors hover:border-brand-300",
+        "block border border-border bg-surface p-5 transition-colors hover:border-brand-300",
         className,
       )}
     >

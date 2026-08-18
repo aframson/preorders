@@ -5,7 +5,7 @@ import { notFound } from "next/navigation";
 import { SearchableProductGrid } from "@/components/dashboard/searchable-product-grid";
 import { ButtonLink } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
-import { cn } from "@/lib/cn";
+import { NavChip } from "@/components/ui/nav-chip";
 import { requireVendor } from "@/lib/auth";
 import type { FreightMode } from "@/lib/freight";
 import type { ProductAvailability } from "@/lib/product-availability";
@@ -101,17 +101,17 @@ export default async function DropProductsPage({
 
       {categories && categories.length > 0 && (
         <div className="-mx-5 mb-5 flex gap-2 overflow-x-auto px-5 scrollbar-none lg:-mx-8 lg:px-8">
-          <CategoryChip href={`/dashboard/drops/${dropId}`} active={!activeCategory}>
+          <NavChip href={`/dashboard/drops/${dropId}`} active={!activeCategory}>
             All
-          </CategoryChip>
+          </NavChip>
           {categories.map((category) => (
-            <CategoryChip
+            <NavChip
               key={category.id}
               href={`/dashboard/drops/${dropId}?category=${category.id}`}
               active={activeCategory === category.id}
             >
               {category.name}
-            </CategoryChip>
+            </NavChip>
           ))}
         </div>
       )}
@@ -150,30 +150,5 @@ export default async function DropProductsPage({
         <Plus className="size-6" aria-hidden />
       </Link>
     </>
-  );
-}
-
-function CategoryChip({
-  href,
-  active,
-  children,
-}: {
-  href: string;
-  active: boolean;
-  children: React.ReactNode;
-}) {
-  return (
-    <Link
-      href={href}
-      aria-current={active ? "true" : undefined}
-      className={cn(
-        "shrink-0 rounded-full px-3.5 py-2 text-sm transition-colors",
-        active
-          ? "bg-brand-700 font-medium text-white"
-          : "bg-surface-muted text-ink-muted hover:text-ink",
-      )}
-    >
-      {children}
-    </Link>
   );
 }

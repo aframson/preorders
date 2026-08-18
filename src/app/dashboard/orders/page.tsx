@@ -1,7 +1,6 @@
 import { Receipt } from "lucide-react";
 
 import { SearchableOrders } from "@/components/dashboard/searchable-orders";
-import { PageHeader } from "@/components/dashboard/page-header";
 import { EmptyState } from "@/components/ui/empty-state";
 import { requireVendor } from "@/lib/auth";
 import type { OrderStatus } from "@/lib/status";
@@ -42,20 +41,28 @@ export default async function OrdersPage() {
   orders.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 
   return (
-    <div className="max-w-3xl">
-      <PageHeader
-        title="Orders"
-        description="Every order across your drops, newest first. Mark picked up or delivered when the customer has their goods."
-      />
+    <div className="-mx-5 -my-6 lg:-mx-8 lg:-my-8">
+      <div className="flex flex-wrap items-end justify-between gap-2 border-b border-border px-5 py-3 lg:px-8">
+        <div>
+          <h1 className="font-display text-lg font-semibold tracking-tight text-ink">
+            Orders
+          </h1>
+          <p className="text-xs text-ink-muted">
+            {orders.length} total · newest first
+          </p>
+        </div>
+      </div>
 
       {orders.length === 0 ? (
-        <EmptyState
-          icon={Receipt}
-          title="No orders yet"
-          description="Share your link. Paid orders land here."
-        />
+        <div className="px-5 py-10 lg:px-8">
+          <EmptyState
+            icon={Receipt}
+            title="No orders yet"
+            description="Share your link. Paid orders land here."
+          />
+        </div>
       ) : (
-        <SearchableOrders orders={orders} />
+        <SearchableOrders orders={orders} edge />
       )}
     </div>
   );

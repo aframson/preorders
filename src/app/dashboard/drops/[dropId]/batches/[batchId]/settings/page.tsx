@@ -17,19 +17,21 @@ export default async function BatchSettingsPage({
   if (!batch) notFound();
 
   return (
-    <BatchForm
-      dropId={dropId}
-      submitLabel="Save changes"
-      initial={{
-        batchId: batch.id,
-        freightMode: batch.freightMode,
-        closesAt: toAccraInputValue(new Date(batch.closesAt)),
-        expectedDeliveryAt: batch.expectedDeliveryAt
-          ? toAccraInputValue(new Date(batch.expectedDeliveryAt)).slice(0, 10)
-          : "",
-        freightRateEstimate: batch.freightRateEstimate,
-        autoOpenNext: batch.autoOpenNext,
-      }}
-    />
+    <div className="-mx-5 -mt-6 border-b border-border bg-surface px-5 py-6 lg:-mx-8 lg:px-8">
+      <BatchForm
+        dropId={dropId}
+        submitLabel="Save changes"
+        initial={{
+          batchId: batch.id,
+          freightMode: batch.freightMode,
+          closesAt: toAccraInputValue(new Date(batch.closesAt)),
+          expectedDeliveryAt: batch.expectedDeliveryAt
+            ? toAccraInputValue(new Date(batch.expectedDeliveryAt)).slice(0, 10)
+            : "",
+          freightRateEstimate: batch.freightRateEstimate,
+          autoOpenNext: batch.autoOpenNext,
+        }}
+      />
+    </div>
   );
 }
