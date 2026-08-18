@@ -14,7 +14,10 @@ export type PortalOrder = {
   freightAmount: Pesewas | null;
   createdAt: string;
   dropTitle: string;
+  dropSlug: string | null;
   batchNumber: number;
+  expectedDeliveryAt: string | null;
+  thumbPath: string | null;
 };
 
 export type CustomerPortal = {
@@ -29,6 +32,10 @@ export type CustomerPortal = {
   orders: PortalOrder[];
 };
 
+type ItemSnapshot = {
+  imagePath?: string;
+};
+
 export async function getCustomerPortal(
   portalToken: string,
 ): Promise<CustomerPortal | null> {
@@ -37,7 +44,7 @@ export async function getCustomerPortal(
   const { data: customer } = await admin
     .from("customers")
     .select(
-      "id, name, email, portal_token, vendors(slug, business_name, logo_path), orders(id, code, public_token, status, fulfilment, goods_total, freight_amount, created_at, batches(number, drops(title)))",
+      "id, name, email, portal_token, vendors(slug, business_name, logo_path), orders(id, code, public_token, status, fulfilment, goods_total, freight_amount, created_at, order_items(snapshot), batches(number, expected_delivery_at, drops(title, slug)))",
     )
     .eq("portal_token", portalToken)
     .maybeSingle();
@@ -45,18 +52,25 @@ export async function getCustomerPortal(
   if (!customer?.vendors) return null;
 
   const orders: PortalOrder[] = (customer.orders ?? [])
-    .map((order) => ({
-      id: order.id,
-      code: order.code,
-      publicToken: order.public_token,
-      status: order.status as OrderStatus,
-      fulfilment: order.fulfilment as "pickup" | "delivery",
-      goodsTotal: order.goods_total,
-      freightAmount: order.freight_amount,
-      createdAt: order.created_at,
-      dropTitle: order.batches?.drops?.title ?? "Drop",
-      batchNumber: order.batches?.number ?? 0,
-    }))
+    .map((order) => {
+      const firstItem = (order.order_items ?? [])[0];
+      const snapshot = (firstItem?.snapshot ?? {}) as ItemSnapshot;
+      return {
+        id: order.id,
+        code: order.code,
+        publicToken: order.public_token,
+        status: order.status as OrderStatus,
+        fulfilment: order.fulfilment as "pickup" | "delivery",
+        goodsTotal: order.goods_total,
+        freightAmount: order.freight_amount,
+        createdAt: order.created_at,
+        dropTitle: order.batches?.drops?.title ?? "Drop",
+        dropSlug: order.batches?.drops?.slug ?? null,
+        batchNumber: order.batches?.number ?? 0,
+        expectedDeliveryAt: order.batches?.expected_delivery_at ?? null,
+        thumbPath: snapshot.imagePath ?? null,
+      };
+    })
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 
   return {
@@ -70,4 +84,21 @@ export async function getCustomerPortal(
     },
     orders,
   };
+}
+
+/** Customer still owes money — show these first in the hub. */
+export function portalNeedsAction(order: PortalOrder): boolean {
+  return (
+    order.status === "pending_payment" || order.status === "awaiting_freight"
+  );
+}
+
+export function portalIsDone(order: PortalOrder): boolean {
+  return order.status === "collected" || order.status === "cancelled";
+}
+
+export function portalActionHint(order: PortalOrder): string | null {
+  if (order.status === "pending_payment") return "Pay to confirm";
+  if (order.status === "awaiting_freight") return "Pay shipping";
+  return null;
 }

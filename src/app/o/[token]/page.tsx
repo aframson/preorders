@@ -1,4 +1,5 @@
 import { Clock, MessageCircle, Package } from "lucide-react";
+import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -13,6 +14,7 @@ import { formatGhs } from "@/lib/money";
 import { settleFromCallback } from "@/lib/payments";
 import { formatLocalPhone } from "@/lib/phone";
 import { getOrderByToken } from "@/lib/queries/order";
+import { getOrderShareCard } from "@/lib/queries/order-share-card";
 import { absoluteUrl, customerPortalPath, dropPath, orderPath, whatsappChatLink } from "@/lib/site";
 import { ORDER_STATUS, orderStatusLabel } from "@/lib/status";
 import { BUCKETS, publicUrl } from "@/lib/storage";
@@ -24,11 +26,33 @@ import { OrderProgress } from "./order-progress";
 import { PaymentPoller } from "./payment-poller";
 import { ResumeFreightPay, ResumeGoodsPay } from "./pay-buttons";
 
-export const metadata = {
-  title: "Your order",
-  // A tracking page carries a customer's name, phone and address.
-  robots: { index: false, follow: false },
-};
+export async function generateMetadata({
+  params,
+}: PageProps<"/o/[token]">): Promise<Metadata> {
+  const { token } = await params;
+  const card = await getOrderShareCard(token).catch(() => null);
+
+  const title = card?.code ?? "Your order";
+  const description = card
+    ? `${card.statusLabel} · ${card.vendorName} · ${card.dropTitle} · Batch ${card.batchNumber}`
+    : "Track your preorder";
+
+  return {
+    title,
+    description,
+    robots: { index: false, follow: false },
+    openGraph: {
+      title,
+      description,
+      type: "website",
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+    },
+  };
+}
 
 export default async function OrderPage({
   params,
