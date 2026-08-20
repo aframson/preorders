@@ -1,6 +1,7 @@
 import { BadgeCheck, Store } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import type { ReactNode } from "react";
 
 import { StarRow } from "@/components/ui/star-row";
 import { BUCKETS, publicUrl } from "@/lib/storage";
@@ -17,6 +18,7 @@ export function VendorHeader({
   reviewCount = 0,
   description,
   href,
+  actions,
 }: {
   businessName: string;
   logoPath: string | null;
@@ -25,6 +27,7 @@ export function VendorHeader({
   reviewCount?: number;
   description?: string | null;
   href?: string;
+  actions?: ReactNode;
 }) {
   const identity = (
     <>
@@ -84,12 +87,13 @@ export function VendorHeader({
     <header className="border-b border-border px-5 py-4">
       <div className="mx-auto flex max-w-3xl items-center gap-3">
         {href ? (
-          <Link href={href} className="flex min-w-0 items-center gap-3">
+          <Link href={href} className="flex min-w-0 flex-1 items-center gap-3">
             {identity}
           </Link>
         ) : (
-          identity
+          <div className="flex min-w-0 flex-1 items-center gap-3">{identity}</div>
         )}
+        {actions}
       </div>
     </header>
   );

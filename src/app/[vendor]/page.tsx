@@ -3,8 +3,10 @@ import { MessageCircle } from "lucide-react";
 import { notFound } from "next/navigation";
 
 import { SearchableVendorDrops } from "@/components/public/searchable-vendor-drops";
+import { ShopHeaderActions } from "@/components/public/shop-header-actions";
 import { VendorHeader } from "@/components/public/vendor-header";
 import { StarRow } from "@/components/ui/star-row";
+import { getVendor } from "@/lib/auth";
 import { getPublicVendor } from "@/lib/queries/public-vendor";
 import { vendorPath, whatsappChatLink } from "@/lib/site";
 
@@ -45,6 +47,7 @@ export default async function PublicVendorPage({
   if (!data) notFound();
 
   const { vendor, drops, recentReviews } = data;
+  const sessionVendor = await getVendor();
 
   return (
     <div className="flex min-h-dvh flex-col">
@@ -52,6 +55,12 @@ export default async function PublicVendorPage({
         businessName={vendor.businessName}
         logoPath={vendor.logoPath}
         batchesDelivered={vendor.batchesDelivered}
+        actions={
+          <ShopHeaderActions
+            vendorSlug={vendor.slug}
+            dashboardHref={sessionVendor ? "/dashboard" : null}
+          />
+        }
       />
 
       <main className="mx-auto w-full max-w-3xl flex-1 px-5 py-6">

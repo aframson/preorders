@@ -5,6 +5,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { Logo } from "@/components/brand/logo";
+import { RememberPortal } from "@/components/public/remember-portal";
 import { CopyButton } from "@/components/share/copy-button";
 import { ButtonLink } from "@/components/ui/button";
 import { MoneyRow } from "@/components/ui/money-row";
@@ -82,6 +83,12 @@ export default async function OrderPage({
   return (
     <div className="min-h-dvh bg-canvas">
       <ClearCartOnConfirm batchId={order.batch.id} />
+      {order.portalToken ? (
+        <RememberPortal
+          vendorSlug={order.vendor.slug}
+          portalToken={order.portalToken}
+        />
+      ) : null}
       <header className="border-b border-border bg-surface">
         <div className="mx-auto flex max-w-lg items-center justify-between px-5 py-3">
           <Link

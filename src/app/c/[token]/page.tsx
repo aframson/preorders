@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowRight, Package } from "lucide-react";
 
+import { RememberPortal } from "@/components/public/remember-portal";
 import { ButtonLink } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { StatusPill } from "@/components/ui/status-pill";
@@ -40,6 +41,10 @@ export default async function CustomerPortalPage({
 
   return (
     <div className="min-h-dvh bg-canvas">
+      <RememberPortal
+        vendorSlug={portal.vendor.slug}
+        portalToken={portal.portalToken}
+      />
       <header className="border-b border-border bg-surface">
         <div className="mx-auto flex max-w-lg items-center gap-3 px-5 py-4">
           <Link

@@ -3,6 +3,9 @@ import "server-only";
 import { redirect } from "next/navigation";
 
 import { createClient } from "@/lib/supabase/server";
+import type { SessionNav } from "@/lib/session-nav";
+
+export type { SessionNav };
 
 export async function getUser() {
   const supabase = await createClient();
@@ -78,4 +81,13 @@ export async function requireVendor(): Promise<VendorContext> {
   const vendor = await getVendor();
   if (!vendor) redirect("/onboarding/business");
   return vendor;
+}
+
+/** Marketing / public chrome: what to show instead of Sign in / Get started. */
+export async function getSessionNav(): Promise<SessionNav> {
+  const user = await getUser();
+  if (!user) return { status: "guest" };
+  const vendor = await getVendor();
+  if (!vendor) return { status: "onboarding" };
+  return { status: "vendor", businessName: vendor.businessName };
 }

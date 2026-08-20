@@ -6,10 +6,11 @@ import { useEffect, useState } from "react";
 import { Logo } from "@/components/brand/logo";
 import { ButtonLink } from "@/components/ui/button";
 import { Container } from "@/components/ui/container";
+import type { SessionNav } from "@/lib/session-nav";
 import { cn } from "@/lib/cn";
 import { SITE } from "@/lib/site";
 
-export function SiteHeader() {
+export function SiteHeader({ session }: { session: SessionNav }) {
   const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
@@ -49,17 +50,34 @@ export function SiteHeader() {
         </nav>
 
         <div className="flex items-center gap-2">
-          <ButtonLink
-            href="/login"
-            variant="ghost"
-            size="sm"
-            className="hidden sm:inline-flex"
-          >
-            Sign in
-          </ButtonLink>
-          <ButtonLink href="/onboarding" size="sm">
-            Get started
-          </ButtonLink>
+          {session.status === "guest" ? (
+            <>
+              <ButtonLink
+                href="/login"
+                variant="ghost"
+                size="sm"
+                className="hidden sm:inline-flex"
+              >
+                Sign in
+              </ButtonLink>
+              <ButtonLink href="/onboarding" size="sm">
+                Get started
+              </ButtonLink>
+            </>
+          ) : session.status === "onboarding" ? (
+            <ButtonLink href="/onboarding/business" size="sm">
+              Continue setup
+            </ButtonLink>
+          ) : (
+            <>
+              <span className="hidden max-w-[10rem] truncate text-sm text-ink-muted sm:inline">
+                {session.businessName}
+              </span>
+              <ButtonLink href="/dashboard" size="sm">
+                Dashboard
+              </ButtonLink>
+            </>
+          )}
         </div>
       </Container>
     </header>

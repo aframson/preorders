@@ -79,6 +79,11 @@ export function customerPortalPath(portalToken: string): string {
   return `/c/${portalToken}`;
 }
 
+/** Find / recover orders for a vendor shop (`/[vendor]/orders`). */
+export function vendorOrdersPath(vendorSlug: string): string {
+  return `/${vendorSlug}/orders`;
+}
+
 /**
  * Defaults to the configured site origin. Server code that already knows the
  * request host should pass it, so preview deployments and custom domains

@@ -2,11 +2,12 @@ import Link from "next/link";
 
 import { Logo } from "@/components/brand/logo";
 import { Container } from "@/components/ui/container";
+import type { SessionNav } from "@/lib/session-nav";
 
 // Read once at module load rather than during render, which must stay pure.
 const YEAR = new Date().getFullYear();
 
-export function SiteFooter() {
+export function SiteFooter({ session }: { session: SessionNav }) {
   return (
     <footer className="mt-24 border-t border-border bg-surface-muted/40">
       <Container className="flex flex-col gap-8 py-12 sm:flex-row sm:items-start sm:justify-between">
@@ -44,9 +45,19 @@ export function SiteFooter() {
             <p className="font-medium text-ink">Company</p>
             <ul className="space-y-2 text-ink-muted">
               <li>
-                <Link href="/login" className="hover:text-ink">
-                  Sign in
-                </Link>
+                {session.status === "guest" ? (
+                  <Link href="/login" className="hover:text-ink">
+                    Sign in
+                  </Link>
+                ) : session.status === "onboarding" ? (
+                  <Link href="/onboarding/business" className="hover:text-ink">
+                    Continue setup
+                  </Link>
+                ) : (
+                  <Link href="/dashboard" className="hover:text-ink">
+                    Dashboard
+                  </Link>
+                )}
               </li>
               <li>
                 <Link href="/terms" className="hover:text-ink">

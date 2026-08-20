@@ -9,7 +9,9 @@ import { DropShopFooter } from "@/components/public/drop-shop-footer";
 import { NotifyMeForm } from "@/components/public/notify-me-form";
 import { PublicProductCatalog } from "@/components/public/public-product-catalog";
 import { VendorHeader } from "@/components/public/vendor-header";
+import { ShopHeaderActions } from "@/components/public/shop-header-actions";
 import { NavChip } from "@/components/ui/nav-chip";
+import { getVendor } from "@/lib/auth";
 import { getPublicDrop } from "@/lib/queries/public-drop";
 import { dropPath, vendorPath, whatsappChatLink } from "@/lib/site";
 
@@ -61,6 +63,7 @@ export default async function PublicDropPage({
 
   const { vendor, drop, categories, products, openBatch, nextBatch } = data;
   const base = dropPath(vendorSlug, dropSlug);
+  const sessionVendor = await getVendor();
 
   const visible = activeCategory
     ? products.filter((product) => product.categoryId === activeCategory)
@@ -85,6 +88,12 @@ export default async function PublicDropPage({
         batchesDelivered={vendor.batchesDelivered}
         description={drop.description}
         href={vendorPath(vendorSlug)}
+        actions={
+          <ShopHeaderActions
+            vendorSlug={vendorSlug}
+            dashboardHref={sessionVendor ? "/dashboard" : null}
+          />
+        }
       />
 
       <div className="sticky top-0 z-20">
