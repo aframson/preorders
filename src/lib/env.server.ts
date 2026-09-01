@@ -19,6 +19,8 @@ const serverEnvSchema = z.object({
       1,
       "Set SUPABASE_SERVICE_ROLE_KEY (Supabase → Project Settings → API → service_role). Required on Vercel.",
     ),
+  /** Comma-separated Supabase Auth emails allowed to access /admin. */
+  ADMIN_EMAILS: z.string().default(""),
   PAYSTACK_MODE: z.preprocess(
     (value) => {
       if (typeof value !== "string") return value;
@@ -48,6 +50,7 @@ export function getServerEnv(): ServerEnv {
 
   const parsed = serverEnvSchema.safeParse({
     SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY,
+    ADMIN_EMAILS: process.env.ADMIN_EMAILS ?? "",
     PAYSTACK_MODE: process.env.PAYSTACK_MODE ?? "test",
     PAYSTACK_TEST_SECRET_KEY: process.env.PAYSTACK_TEST_SECRET_KEY,
     PAYSTACK_TEST_PUBLIC_KEY: process.env.PAYSTACK_TEST_PUBLIC_KEY,

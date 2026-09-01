@@ -3,8 +3,8 @@ import { randomUUID } from "node:crypto";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { ButtonLink } from "@/components/ui/button";
 import { requireVendor } from "@/lib/auth";
-import { syncVendorPayoutStatus } from "@/lib/payout-verification";
 import { createClient } from "@/lib/supabase/server";
+import { getVendorApproval } from "@/lib/vendor-approval";
 import { ProductForm } from "../product-form";
 
 export const metadata = { title: "Add product" };
@@ -14,28 +14,39 @@ export default async function NewProductPage({
 }: PageProps<"/dashboard/drops/[dropId]/products/new">) {
   const { dropId } = await params;
   const vendor = await requireVendor();
-  const payout = await syncVendorPayoutStatus(vendor);
+  const approval = await getVendorApproval(vendor);
 
-  if (!payout.verified) {
+  if (!approval.approved) {
     return (
       <>
         <PageHeader title="Add product" />
         <div className="max-w-lg space-y-4 rounded-card border border-closing/30 bg-closing-tint px-5 py-5 text-sm text-ink">
           <p className="font-medium">
-            {payout.connected
-              ? "Paystack verification required"
-              : "Connect payouts first"}
+            {approval.status === "missing_payout"
+              ? "Connect payouts first"
+              : approval.status === "rejected"
+                ? "Your account needs attention"
+                : "Preorders approval required"}
           </p>
           <p className="text-ink-muted">
-            {payout.connected
-              ? "Your payout account is connected but still unverified on Paystack. Once an admin verifies the subaccount, you can upload products."
-              : "Connect your MoMo number, then wait for Paystack verification before adding products."}
+            {approval.status === "missing_payout"
+              ? "Connect your MoMo or bank account before adding products."
+              : approval.status === "rejected"
+                ? approval.note ??
+                  "Review your payout details, then submit them again."
+                : "Your payout details are in the review queue. You can add products once an admin approves them."}
           </p>
           <ButtonLink
-            href={payout.connected ? "/dashboard/more" : "/onboarding/payout"}
+            href={
+              approval.status === "missing_payout"
+                ? "/onboarding/payout"
+                : "/dashboard/more"
+            }
             size="sm"
           >
-            {payout.connected ? "Check verification status" : "Connect payouts"}
+            {approval.status === "missing_payout"
+              ? "Connect payouts"
+              : "See review status"}
           </ButtonLink>
         </div>
       </>

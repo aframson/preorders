@@ -12,6 +12,7 @@ import {
 } from "@/lib/paystack";
 import { absoluteUrl, orderPath } from "@/lib/site";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { isVendorApprovedForSelling } from "@/lib/vendor-approval";
 
 /**
  * References are the idempotency key shared with Paystack, so they must be
@@ -35,6 +36,7 @@ type PaymentTarget = {
   publicToken: string;
   email: string;
   amount: number;
+  vendorId: string;
   subaccount: string | null;
 };
 
@@ -52,6 +54,12 @@ async function start(
   if (!isPaystackConfigured()) return null;
   if (target.amount <= 0) {
     throw new PaymentUnavailableError("Nothing to charge for this order.");
+  }
+
+  if (!(await isVendorApprovedForSelling(target.vendorId))) {
+    throw new PaymentUnavailableError(
+      "This seller is still being reviewed and cannot accept payments yet.",
+    );
   }
 
   if (paystackMode() === "live" && !target.subaccount) {
@@ -134,7 +142,7 @@ async function loadTarget(orderId: string): Promise<
   const { data: order } = await admin
     .from("orders")
     .select(
-      "id, code, public_token, goods_total, freight_amount, customers(email), batches(drops(vendors(paystack_subaccount_code)))",
+      "id, code, public_token, goods_total, freight_amount, customers(email), batches(drops(vendors(id, paystack_subaccount_code)))",
     )
     .eq("id", orderId)
     .maybeSingle();
@@ -142,7 +150,8 @@ async function loadTarget(orderId: string): Promise<
   if (!order) return null;
 
   const email = order.customers?.email;
-  if (!email) return null;
+  const vendor = order.batches?.drops?.vendors;
+  if (!email || !vendor) return null;
 
   return {
     orderId: order.id,
@@ -150,8 +159,8 @@ async function loadTarget(orderId: string): Promise<
     publicToken: order.public_token,
     email,
     amount: 0,
-    subaccount:
-      order.batches?.drops?.vendors?.paystack_subaccount_code ?? null,
+    vendorId: vendor.id,
+    subaccount: vendor.paystack_subaccount_code ?? null,
     goodsTotal: order.goods_total,
     freightActual: order.freight_amount,
   };

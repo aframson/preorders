@@ -16,7 +16,7 @@ export default async function EarningsPage() {
   const vendor = await requireVendor();
   const money = await getVendorMoney(vendor.id);
 
-  const connected = Boolean(vendor.payoutVerifiedAt);
+  const connected = Boolean(vendor.paystackSubaccountCode);
 
   return (
     <div className="max-w-3xl space-y-6">
@@ -70,7 +70,7 @@ export default async function EarningsPage() {
                 ? `Payouts are connected${
                     vendor.payoutVerifiedAt
                       ? ` (verified ${formatAccraDateTime(vendor.payoutVerifiedAt)})`
-                      : " — still waiting for Paystack admin verification"
+                      : " — Paystack still reports external verification as pending"
                   }. Change details anytime under More → Payments.`
                 : "Link MTN / Telecel / AirtelTigo MoMo or a bank account so Paystack knows where to settle."
             }
@@ -94,7 +94,7 @@ export default async function EarningsPage() {
           <Step
             icon={Wallet}
             title="3. Paystack pays out to MoMo / bank"
-            body="Ghana settlements are next working day (not weekends/holidays). The first payout to a new or updated subaccount is held until you verify that subaccount in the Paystack dashboard — then it pays out on the next working day."
+            body="Ghana settlements are normally next working day (not weekends or holidays). Paystack may hold a new or updated subaccount while its own external verification is pending."
           />
         </ol>
       </section>

@@ -120,3 +120,42 @@ exception
     reset role;
     raise notice 'PASS 9: anon blocked from customers';
 end $$;
+
+-- Authenticated storefront reads must not expose private payout columns.
+do $$
+begin
+  set local role authenticated;
+  perform payout_account_number from public.vendors limit 1;
+  reset role;
+  raise exception 'FAIL 10: authenticated role could read vendor payout accounts';
+exception
+  when insufficient_privilege then
+    reset role;
+    raise notice 'PASS 10: private vendor payout columns are not browser-readable';
+end $$;
+
+do $$
+begin
+  set local role authenticated;
+  perform 1 from public.vendor_approvals limit 1;
+  reset role;
+  raise exception 'FAIL 11: authenticated role could read vendor approvals';
+exception
+  when insufficient_privilege then
+    reset role;
+    raise notice 'PASS 11: vendor approvals are service-role only';
+end $$;
+
+do $$
+begin
+  set local role authenticated;
+  update public.vendors
+     set payout_verified_at = now()
+   where false;
+  reset role;
+  raise exception 'FAIL 12: authenticated role could update payout verification';
+exception
+  when insufficient_privilege then
+    reset role;
+    raise notice 'PASS 12: payout-sensitive vendor updates are blocked';
+end $$;

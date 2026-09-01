@@ -15,6 +15,8 @@ export async function refreshPayoutVerification(
   _prev: RefreshPayoutState,
   _formData: FormData,
 ): Promise<RefreshPayoutState> {
+  void _prev;
+  void _formData;
   const vendor = await requireVendor();
 
   if (!vendor.paystackSubaccountCode) {
@@ -30,14 +32,14 @@ export async function refreshPayoutVerification(
 
   if (synced.verified) {
     return {
-      message: "Paystack has verified your payout account. You can sell now.",
+      message: "Paystack reports this payout account as verified.",
       verified: true,
     };
   }
 
   return {
     message:
-      "Still pending on Paystack. Ask an admin to verify your subaccount, then check again.",
+      "Paystack still reports this subaccount as unverified. Preorders approval is shown separately.",
     verified: false,
   };
 }

@@ -7,10 +7,10 @@ import { z } from "zod";
 import { requireVendor } from "@/lib/auth";
 import { finaliseBatchClose } from "@/lib/batches";
 import { cancelBatchCutoff, scheduleBatchCutoff, triggerStatusBroadcast } from "@/lib/jobs";
-import { requireVerifiedPayout } from "@/lib/payout-verification";
 import type { BatchStatus } from "@/lib/status";
 import { createClient } from "@/lib/supabase/server";
 import { fromAccraInputValue } from "@/lib/time";
+import { requireVendorApproval } from "@/lib/vendor-approval";
 
 export type ActionState = { error?: string | null; message?: string | null };
 
@@ -158,14 +158,15 @@ export async function openBatch(
   dropId: string,
 ): Promise<ActionState> {
   const vendor = await requireVendor();
-  const payout = await requireVerifiedPayout(vendor);
-  if (!payout.ok) return { error: payout.error };
+  const approval = await requireVendorApproval(vendor);
+  if (!approval.ok) return { error: approval.error };
 
   const supabase = await createClient();
   const { data: batch } = await supabase
     .from("batches")
     .select("id, closes_at, drop_id")
     .eq("id", batchId)
+    .eq("drop_id", dropId)
     .maybeSingle();
 
   if (!batch) return { error: "Batch not found." };
@@ -223,7 +224,20 @@ export async function setBatchStatus(
   dropId: string,
   status: BatchStatus,
 ): Promise<ActionState> {
-  await requireVendor();
+  const vendor = await requireVendor();
+  const supabase = await createClient();
+
+  // Prove ownership under the caller's RLS-scoped session before any branch
+  // reaches helpers that use the service role.
+  const { data: ownedBatch } = await supabase
+    .from("batches")
+    .select("id, drops!inner(vendor_id)")
+    .eq("id", batchId)
+    .eq("drop_id", dropId)
+    .eq("drops.vendor_id", vendor.id)
+    .maybeSingle();
+
+  if (!ownedBatch) return { error: "Batch not found." };
 
   if (status === "closed") {
     const result = await finaliseBatchClose(batchId);
@@ -249,8 +263,6 @@ export async function setBatchStatus(
         : "Batch closed",
     };
   }
-
-  const supabase = await createClient();
 
   if (status === "settled") {
     const { settleBatchIfFreightComplete } = await import(

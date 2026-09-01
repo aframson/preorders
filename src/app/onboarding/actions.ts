@@ -23,6 +23,10 @@ import { isReservedSlug, slugify } from "@/lib/site";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { fromAccraInputValue } from "@/lib/time";
+import {
+  isMissingApprovalTable,
+  resetVendorApproval,
+} from "@/lib/vendor-approval";
 
 export type ActionState = { error?: string | null; message?: string | null };
 
@@ -110,6 +114,15 @@ export async function saveBusiness(
     .insert({ vendor_id: vendor.id, user_id: user.id, role: "owner" });
 
   if (memberError) {
+    await admin.from("vendors").delete().eq("id", vendor.id);
+    return { error: "Could not finish setting up your account. Try again." };
+  }
+
+  const { error: approvalError } = await admin
+    .from("vendor_approvals")
+    .insert({ vendor_id: vendor.id, status: "pending" });
+
+  if (approvalError && !isMissingApprovalTable(approvalError)) {
     await admin.from("vendors").delete().eq("id", vendor.id);
     return { error: "Could not finish setting up your account. Try again." };
   }
@@ -388,8 +401,11 @@ export async function savePayout(
       ? await updateSubaccount(vendor.paystackSubaccountCode, payload)
       : await createSubaccount(payload);
 
-    const supabase = await createClient();
-    const { error } = await supabase
+    // Payout columns are intentionally not browser-writable. This action has
+    // re-resolved the destination with Paystack, so persist it under the
+    // service role and invalidate any previous Preorders approval.
+    const admin = createAdminClient();
+    const { error } = await admin
       .from("vendors")
       .update({
         paystack_subaccount_code: subaccount.subaccountCode,
@@ -405,6 +421,7 @@ export async function savePayout(
       .eq("id", vendor.id);
 
     if (error) return { error: error.message };
+    await resetVendorApproval(vendor.id);
   } catch (error) {
     if (
       error instanceof PaystackError &&

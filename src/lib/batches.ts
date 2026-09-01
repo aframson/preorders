@@ -2,6 +2,7 @@ import "server-only";
 
 import { scheduleBatchCutoff } from "@/lib/jobs";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { isVendorApprovedForSelling } from "@/lib/vendor-approval";
 
 type ClosedBatch = {
   id: string;
@@ -33,6 +34,16 @@ export async function openSuccessorBatch(
 
   const admin = createAdminClient();
   const nowIso = now.toISOString();
+
+  const { data: drop } = await admin
+    .from("drops")
+    .select("vendor_id")
+    .eq("id", closed.drop_id)
+    .maybeSingle();
+
+  if (!drop || !(await isVendorApprovedForSelling(drop.vendor_id))) {
+    return { skipped: true, reason: "vendor_not_approved" };
+  }
 
   const { data: existingOpen } = await admin
     .from("batches")

@@ -7,6 +7,7 @@ import type { ProductAvailability } from "@/lib/product-availability";
 import type { BatchStatus } from "@/lib/status";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
+import { isVendorApprovedForSelling } from "@/lib/vendor-approval";
 
 export type PublicVariant = {
   id: string;
@@ -94,12 +95,15 @@ export async function getPublicDrop(
 
   if (!vendor) return null;
 
-  const { data: drop } = await supabase
-    .from("drops")
-    .select("id, slug, title, description, cover_path")
-    .eq("vendor_id", vendor.id)
-    .eq("slug", dropSlug)
-    .maybeSingle();
+  const [canSell, { data: drop }] = await Promise.all([
+    isVendorApprovedForSelling(vendor.id),
+    supabase
+      .from("drops")
+      .select("id, slug, title, description, cover_path")
+      .eq("vendor_id", vendor.id)
+      .eq("slug", dropSlug)
+      .maybeSingle(),
+  ]);
 
   if (!drop) return null;
 
@@ -160,8 +164,9 @@ export async function getPublicDrop(
     expired: isPastCutoff(batch.closes_at),
   }));
 
-  const openBatch =
-    mapped.find((batch) => batch.status === "open" && !batch.expired) ?? null;
+  const openBatch = canSell
+    ? (mapped.find((batch) => batch.status === "open" && !batch.expired) ?? null)
+    : null;
 
   return {
     vendor: {

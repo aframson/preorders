@@ -13,6 +13,7 @@ import { PLATFORM_FEE_PERCENT } from "@/lib/fees";
 import { isPaystackConfigured, paystackMode } from "@/lib/paystack";
 import { syncVendorPayoutStatus } from "@/lib/payout-verification";
 import { absoluteUrl } from "@/lib/site";
+import { getVendorApproval } from "@/lib/vendor-approval";
 import { PickupLocationForm } from "./pickup-form";
 import { RefreshPayoutButton } from "./refresh-payout-button";
 
@@ -20,7 +21,10 @@ export const metadata = { title: "More" };
 
 export default async function MorePage() {
   const vendor = await requireVendor();
-  const payout = await syncVendorPayoutStatus(vendor);
+  const [payout, approval] = await Promise.all([
+    syncVendorPayoutStatus(vendor),
+    getVendorApproval(vendor),
+  ]);
   const profileUrl = absoluteUrl(`/${vendor.slug}`, env.NEXT_PUBLIC_SITE_URL);
   const paystackReady = isPaystackConfigured();
   const mode = paystackMode();
@@ -113,7 +117,7 @@ export default async function MorePage() {
                   ? "Not connected"
                   : payout.verified
                     ? "Verified"
-                    : "Pending admin"}
+                    : "Not verified"}
               </dd>
             </div>
           </dl>
@@ -146,12 +150,12 @@ export default async function MorePage() {
       <Card>
         <CardHeader title="Payouts" />
         <CardBody className="space-y-4">
-          {payout.verified ? (
+          {approval.approved ? (
             <>
               <p className="flex items-start gap-2.5 text-sm">
                 <BadgeCheck className="mt-0.5 size-4 shrink-0 text-open" aria-hidden />
                 <span className="text-ink-muted">
-                  Verified on Paystack. Goods payments settle straight to your{" "}
+                  Approved by Preorders. Goods payments settle straight to your{" "}
                   {payout.payoutChannel === "bank"
                     ? "bank account"
                     : "mobile money number"}
@@ -202,12 +206,13 @@ export default async function MorePage() {
                   aria-hidden
                 />
                 <span className="text-ink-muted">
-                  Your Preorders account isn’t verified yet — verification is
-                  underway. Products and batches unlock when it’s done.
+                  {approval.status === "rejected"
+                    ? approval.note ??
+                      "Your payout details need attention. Update them to submit a new review."
+                    : "Your payout details are waiting for Preorders review. Products, batches and checkout unlock after approval."}
                 </span>
               </p>
               <div className="flex flex-wrap gap-2">
-                <RefreshPayoutButton />
                 <ButtonLink
                   href="/onboarding/payout?from=more"
                   variant="secondary"
@@ -215,6 +220,7 @@ export default async function MorePage() {
                 >
                   Change payout method
                 </ButtonLink>
+                <RefreshPayoutButton />
               </div>
             </>
           ) : (

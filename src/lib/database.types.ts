@@ -694,6 +694,53 @@ export type Database = {
           },
         ]
       }
+      vendor_approvals: {
+        Row: {
+          approved_account_number: string | null
+          approved_bank_code: string | null
+          approved_subaccount_code: string | null
+          created_at: string
+          note: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: Database["public"]["Enums"]["vendor_approval_status"]
+          updated_at: string
+          vendor_id: string
+        }
+        Insert: {
+          approved_account_number?: string | null
+          approved_bank_code?: string | null
+          approved_subaccount_code?: string | null
+          created_at?: string
+          note?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: Database["public"]["Enums"]["vendor_approval_status"]
+          updated_at?: string
+          vendor_id: string
+        }
+        Update: {
+          approved_account_number?: string | null
+          approved_bank_code?: string | null
+          approved_subaccount_code?: string | null
+          created_at?: string
+          note?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: Database["public"]["Enums"]["vendor_approval_status"]
+          updated_at?: string
+          vendor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vendor_approvals_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: true
+            referencedRelation: "vendors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       vendor_members: {
         Row: {
           created_at: string
@@ -872,6 +919,7 @@ export type Database = {
         | "refunded"
       payment_type: "goods" | "freight"
       product_availability: "preorder" | "in_stock"
+      vendor_approval_status: "pending" | "approved" | "rejected"
       vendor_role: "owner" | "staff"
     }
     CompositeTypes: {
@@ -1028,6 +1076,7 @@ export const Constants = {
       payment_status: ["pending", "success", "failed", "abandoned", "refunded"],
       payment_type: ["goods", "freight"],
       product_availability: ["preorder", "in_stock"],
+      vendor_approval_status: ["pending", "approved", "rejected"],
       vendor_role: ["owner", "staff"],
     },
   },

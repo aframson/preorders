@@ -6,9 +6,9 @@ import { z } from "zod";
 
 import { requireVendor } from "@/lib/auth";
 import { cancelBatchCutoff } from "@/lib/jobs";
-import { requireVerifiedPayout } from "@/lib/payout-verification";
 import { slugify } from "@/lib/site";
 import { createClient } from "@/lib/supabase/server";
+import { requireVendorApproval } from "@/lib/vendor-approval";
 
 export type ActionState = { error?: string | null; message?: string | null };
 
@@ -252,8 +252,8 @@ export async function saveProduct(
   formData: FormData,
 ): Promise<ActionState> {
   const vendor = await requireVendor();
-  const payout = await requireVerifiedPayout(vendor);
-  if (!payout.ok) return { error: payout.error };
+  const approval = await requireVendorApproval(vendor);
+  if (!approval.ok) return { error: approval.error };
 
   let payload: unknown;
   try {

@@ -16,18 +16,22 @@ import { ButtonLink } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { requireVendor } from "@/lib/auth";
 import { env } from "@/lib/env";
-import { syncVendorPayoutStatus } from "@/lib/payout-verification";
 import { batchTotals, getDashboardBatches } from "@/lib/queries/dashboard";
 import { absoluteUrl, dropPath, shareUrl } from "@/lib/site";
 import { createClient } from "@/lib/supabase/server";
+import {
+  getVendorApproval,
+  type VendorApprovalState,
+} from "@/lib/vendor-approval";
 
 export const metadata = { title: "Home" };
 
 export default async function DashboardHome() {
-  const vendor = await syncVendorPayoutStatus(await requireVendor());
+  const vendor = await requireVendor();
   const supabase = await createClient();
 
-  const [batches, { data: drops }] = await Promise.all([
+  const [approval, batches, { data: drops }] = await Promise.all([
+    getVendorApproval(vendor),
     getDashboardBatches(vendor.id),
     supabase
       .from("drops")
@@ -47,6 +51,7 @@ export default async function DashboardHome() {
 
   const actions = buildActionQueue({
     vendor,
+    approval,
     drops: drops ?? [],
     batches,
   });
@@ -155,13 +160,14 @@ type DropWithProducts = {
 
 function buildActionQueue({
   vendor,
+  approval,
   drops,
   batches,
 }: {
   vendor: {
-    payoutVerifiedAt: string | null;
     paystackSubaccountCode: string | null;
   };
+  approval: VendorApprovalState;
   drops: DropWithProducts[];
   batches: Awaited<ReturnType<typeof getDashboardBatches>>;
 }): ActionItem[] {
@@ -176,12 +182,18 @@ function buildActionQueue({
       href: "/onboarding/payout",
       tone: "danger",
     });
-  } else if (!vendor.payoutVerifiedAt) {
+  } else if (!approval.approved) {
     items.push({
-      id: "payout-verify",
+      id: "vendor-approval",
       icon: Wallet,
-      label: "Preorders account not verified yet",
-      detail: "Verification is underway — products and batches unlock after",
+      label:
+        approval.status === "rejected"
+          ? "Your Preorders review needs attention"
+          : "Preorders review is pending",
+      detail:
+        approval.status === "rejected"
+          ? approval.note ?? "Review your payout details and submit them again"
+          : "Products and batches unlock after approval",
       href: "/dashboard/more",
       tone: "danger",
     });

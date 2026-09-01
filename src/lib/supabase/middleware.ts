@@ -4,7 +4,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import type { Database } from "@/lib/database.types";
 import { env } from "@/lib/env";
 
-const PROTECTED_PREFIXES = ["/dashboard", "/onboarding"];
+const PROTECTED_PREFIXES = ["/admin", "/dashboard", "/onboarding"];
 
 /**
  * Refreshes the auth cookie on every request and gates the vendor areas.

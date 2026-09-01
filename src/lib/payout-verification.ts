@@ -6,13 +6,7 @@ import {
   isPaystackConfigured,
   PaystackError,
 } from "@/lib/paystack";
-import { createClient } from "@/lib/supabase/server";
-
-export const PAYOUT_PENDING_MESSAGE =
-  "Your Paystack payout account is waiting for admin verification. You can add products and open a batch once it is verified on Paystack.";
-
-export const PAYOUT_MISSING_MESSAGE =
-  "Connect your MoMo payout number before you can add products or open a batch.";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 export type PayoutStatus = {
   connected: boolean;
@@ -47,8 +41,8 @@ export async function syncVendorPayoutStatus(
       : null;
 
     if (verifiedAt !== vendor.payoutVerifiedAt) {
-      const supabase = await createClient();
-      await supabase
+      const admin = createAdminClient();
+      await admin
         .from("vendors")
         .update({ payout_verified_at: verifiedAt })
         .eq("id", vendor.id);
@@ -74,20 +68,4 @@ export async function syncVendorPayoutStatus(
       payoutVerifiedAt: vendor.payoutVerifiedAt,
     };
   }
-}
-
-/** Server-action guard: products + open-batch require a verified Paystack subaccount. */
-export async function requireVerifiedPayout(
-  vendor: VendorContext,
-): Promise<{ ok: true; vendor: VendorContext } | { ok: false; error: string }> {
-  if (!vendor.paystackSubaccountCode) {
-    return { ok: false, error: PAYOUT_MISSING_MESSAGE };
-  }
-
-  const synced = await syncVendorPayoutStatus(vendor);
-  if (!synced.verified) {
-    return { ok: false, error: PAYOUT_PENDING_MESSAGE };
-  }
-
-  return { ok: true, vendor: synced };
 }

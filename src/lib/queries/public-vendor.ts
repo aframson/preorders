@@ -4,6 +4,7 @@ import { isPastCutoff } from "@/lib/jobs";
 import type { PublicBatch } from "@/lib/queries/public-drop";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
+import { isVendorApprovedForSelling } from "@/lib/vendor-approval";
 
 export type PublicVendorDrop = {
   id: string;
@@ -55,15 +56,18 @@ export async function getPublicVendor(
 
   if (!vendor) return null;
 
-  const { data: drops } = await supabase
-    .from("drops")
-    .select(
-      "id, slug, title, description, cover_path, batches(id, number, status, opens_at, closes_at, expected_delivery_at, freight_mode, freight_rate_estimate)",
-    )
-    .eq("vendor_id", vendor.id)
-    .eq("published", true)
-    .is("archived_at", null)
-    .order("created_at", { ascending: false });
+  const [canSell, { data: drops }] = await Promise.all([
+    isVendorApprovedForSelling(vendor.id),
+    supabase
+      .from("drops")
+      .select(
+        "id, slug, title, description, cover_path, batches(id, number, status, opens_at, closes_at, expected_delivery_at, freight_mode, freight_rate_estimate)",
+      )
+      .eq("vendor_id", vendor.id)
+      .eq("published", true)
+      .is("archived_at", null)
+      .order("created_at", { ascending: false }),
+  ]);
 
   const allBatches = (drops ?? []).flatMap((drop) => drop.batches ?? []);
   const countByBatch = new Map<string, number>();
@@ -152,8 +156,11 @@ export async function getPublicVendor(
         description: drop.description,
         coverPath: drop.cover_path,
         openBatch:
-          mapped.find((batch) => batch.status === "open" && !batch.expired) ??
-          null,
+          canSell
+            ? (mapped.find(
+                (batch) => batch.status === "open" && !batch.expired,
+              ) ?? null)
+            : null,
         nextBatch:
           mapped
             .filter((batch) => batch.status === "scheduled")

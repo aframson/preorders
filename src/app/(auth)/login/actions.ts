@@ -85,7 +85,7 @@ export async function verifyCode(
   }
 
   const next = String(formData.get("next") ?? "");
-  redirect(next.startsWith("/") ? next : "/dashboard");
+  redirect(next.startsWith("/") && !next.startsWith("//") ? next : "/dashboard");
 }
 
 function humaniseAuthError(message: string): string {

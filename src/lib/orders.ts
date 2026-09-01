@@ -12,6 +12,7 @@ import {
   resolveMeasurement,
   sumPriceDelta,
 } from "@/lib/variants";
+import { isVendorApprovedForSelling } from "@/lib/vendor-approval";
 
 /** How long an unpaid order holds its place before the slot is released. */
 export const HOLD_HOURS = 24;
@@ -289,12 +290,18 @@ export async function createOrder(
 
   const { data: batch } = await admin
     .from("batches")
-    .select("id, status, closes_at, drop_id")
+    .select("id, status, closes_at, drop_id, drops(vendor_id)")
     .eq("id", input.batchId)
     .maybeSingle();
 
-  if (!batch || batch.drop_id !== input.dropId) {
+  if (!batch || batch.drop_id !== input.dropId || !batch.drops) {
     throw new CheckoutError("This batch is no longer available.");
+  }
+
+  if (!(await isVendorApprovedForSelling(batch.drops.vendor_id))) {
+    throw new CheckoutError(
+      "This seller is still being reviewed and cannot accept orders yet.",
+    );
   }
 
   // Checked here as well as at render time: a customer can sit on the checkout

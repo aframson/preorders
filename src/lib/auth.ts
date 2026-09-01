@@ -2,6 +2,7 @@ import "server-only";
 
 import { redirect } from "next/navigation";
 
+import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import type { SessionNav } from "@/lib/session-nav";
 
@@ -40,15 +41,26 @@ export type VendorContext = {
 export async function getVendor(): Promise<VendorContext | null> {
   const supabase = await createClient();
 
-  const { data } = await supabase
+  // Resolve membership under the user's RLS-scoped session first. Private
+  // payout columns are then read server-side because browser roles only have
+  // access to the public vendor profile columns.
+  const { data: membership } = await supabase
     .from("vendor_members")
-    .select(
-      "vendors(id, slug, business_name, logo_path, whatsapp_number, pickup_maps_url, paystack_subaccount_code, payout_verified_at, payout_channel, payout_bank_code, payout_account_number, payout_account_name)",
-    )
+    .select("vendor_id")
     .limit(1)
     .maybeSingle();
 
-  const vendor = data?.vendors;
+  if (!membership) return null;
+
+  const admin = createAdminClient();
+  const { data: vendor } = await admin
+    .from("vendors")
+    .select(
+      "id, slug, business_name, logo_path, whatsapp_number, pickup_maps_url, paystack_subaccount_code, payout_verified_at, payout_channel, payout_bank_code, payout_account_number, payout_account_name",
+    )
+    .eq("id", membership.vendor_id)
+    .maybeSingle();
+
   if (!vendor) return null;
 
   const channel =
