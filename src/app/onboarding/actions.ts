@@ -84,6 +84,10 @@ export async function saveBusiness(
       .eq("id", existing.id);
 
     if (error) {
+      console.error("saveBusiness vendor update failed", {
+        code: error.code,
+        message: error.message,
+      });
       return { error: describeSlugError(error.message, slug) };
     }
 
@@ -106,6 +110,12 @@ export async function saveBusiness(
     .single();
 
   if (vendorError || !vendor) {
+    console.error("saveBusiness vendor insert failed", {
+      code: vendorError?.code,
+      message: vendorError?.message,
+      details: vendorError?.details,
+      hint: vendorError?.hint,
+    });
     return { error: describeSlugError(vendorError?.message ?? "", slug) };
   }
 
@@ -114,6 +124,10 @@ export async function saveBusiness(
     .insert({ vendor_id: vendor.id, user_id: user.id, role: "owner" });
 
   if (memberError) {
+    console.error("saveBusiness vendor_members insert failed", {
+      code: memberError.code,
+      message: memberError.message,
+    });
     await admin.from("vendors").delete().eq("id", vendor.id);
     return { error: "Could not finish setting up your account. Try again." };
   }
@@ -123,6 +137,10 @@ export async function saveBusiness(
     .insert({ vendor_id: vendor.id, status: "pending" });
 
   if (approvalError && !isMissingApprovalTable(approvalError)) {
+    console.error("saveBusiness vendor_approvals insert failed", {
+      code: approvalError.code,
+      message: approvalError.message,
+    });
     await admin.from("vendors").delete().eq("id", vendor.id);
     return { error: "Could not finish setting up your account. Try again." };
   }
@@ -139,6 +157,15 @@ function describeSlugError(message: string, slug: string): string {
 
   if (lower.includes("permission denied") || lower.includes("row-level security")) {
     return "We couldn't save your business details right now. Please try again in a moment.";
+  }
+
+  if (
+    lower.includes("invalid api key") ||
+    lower.includes("jwt") ||
+    lower.includes("unauthorized") ||
+    lower.includes("401")
+  ) {
+    return "Server database keys look wrong. Check SUPABASE_SERVICE_ROLE_KEY and restart the app.";
   }
 
   if (!message.trim()) {
