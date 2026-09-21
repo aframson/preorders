@@ -12,19 +12,19 @@ export default async function DashboardLayout({
   const vendor = await requireVendor();
 
   return (
-    <div className="flex min-h-dvh flex-col lg:flex-row">
+    <div className="flex min-h-dvh flex-col bg-canvas lg:flex-row">
       <RegisterServiceWorker />
-      <header className="border-b border-border px-5 py-4 lg:hidden">
+      <header className="border-b border-border bg-surface px-5 py-4 lg:hidden">
         <Link href="/dashboard" aria-label="Dashboard">
           <Logo />
         </Link>
       </header>
 
-      <Sidebar businessName={vendor.businessName} />
+      <Sidebar businessName={vendor.businessName} vendorSlug={vendor.slug} />
 
-      <div className="flex min-w-0 flex-1 flex-col">
+      <div className="flex min-w-0 flex-1 flex-col bg-surface lg:m-2 lg:ml-0 lg:min-h-[calc(100dvh-1rem)] lg:overflow-hidden lg:rounded-card lg:border lg:border-border lg:shadow-sm">
         <VendorApprovalBanner vendor={vendor} />
-        <main className="flex-1 px-5 py-6 lg:px-8 lg:py-8">{children}</main>
+        <main className="flex-1 px-5 py-6 lg:px-8 lg:py-7">{children}</main>
         <BottomTabs />
       </div>
     </div>

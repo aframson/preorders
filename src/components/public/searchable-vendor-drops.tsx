@@ -51,13 +51,13 @@ export function SearchableVendorDrops({
         <ListSearch
           value={query}
           onChange={setQuery}
-          placeholder="Search batches…"
-          label="Search batches"
+          placeholder="Search preorder links…"
+          label="Search preorder links"
         />
       )}
       {filtered.length === 0 ? (
         <p className="rounded-card border border-dashed border-border px-4 py-8 text-center text-sm text-ink-muted">
-          No batches match that search.
+          No preorder links match that search.
         </p>
       ) : (
         <ul className="space-y-3">
@@ -75,7 +75,7 @@ export function SearchableVendorDrops({
               <li key={drop.id}>
                 <Link
                   href={href}
-                  className="flex gap-3 overflow-hidden rounded-card border border-border bg-surface transition-colors hover:border-brand-300"
+                  className="flex gap-3 overflow-hidden rounded-card border border-border bg-surface shadow-sm transition-colors hover:border-border-strong hover:bg-surface-muted/30"
                 >
                   <div className="relative w-24 shrink-0 self-stretch bg-surface-muted sm:w-28">
                     {drop.coverPath ? (

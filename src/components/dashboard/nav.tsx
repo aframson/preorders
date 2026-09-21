@@ -1,26 +1,29 @@
 "use client";
 
 import {
+  ExternalLink,
   Home,
   Layers,
-  MoreHorizontal,
   Receipt,
+  Settings,
+  Store,
   Wallet,
   type LucideIcon,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
+import { Logo } from "@/components/brand/logo";
 import { cn } from "@/lib/cn";
 
 type NavItem = { href: string; label: string; icon: LucideIcon };
 
 const ITEMS: NavItem[] = [
-  { href: "/dashboard", label: "Home", icon: Home },
+  { href: "/dashboard", label: "Overview", icon: Home },
   { href: "/dashboard/drops", label: "Drops", icon: Layers },
   { href: "/dashboard/orders", label: "Orders", icon: Receipt },
   { href: "/dashboard/money", label: "Money", icon: Wallet },
-  { href: "/dashboard/more", label: "More", icon: MoreHorizontal },
+  { href: "/dashboard/more", label: "Settings", icon: Settings },
 ];
 
 function useIsActive() {
@@ -64,18 +67,25 @@ export function BottomTabs() {
   );
 }
 
-export function Sidebar({ businessName }: { businessName: string }) {
+export function Sidebar({
+  businessName,
+  vendorSlug,
+}: {
+  businessName: string;
+  vendorSlug: string;
+}) {
   const isActive = useIsActive();
 
   return (
     <nav
       aria-label="Main"
-      className="hidden w-60 shrink-0 border-r border-border lg:sticky lg:top-0 lg:flex lg:h-dvh lg:flex-col lg:overflow-y-auto lg:px-3 lg:py-6"
+      className="hidden w-56 shrink-0 lg:sticky lg:top-0 lg:flex lg:h-dvh lg:flex-col lg:overflow-y-auto lg:px-3 lg:py-4"
     >
-      <p className="truncate px-3 pb-4 font-display text-sm font-semibold text-ink">
-        {businessName}
-      </p>
-      <ul className="space-y-1">
+      <Link href="/" className="mb-6 px-2" aria-label="Preorders home">
+        <Logo />
+      </Link>
+
+      <ul className="space-y-0.5">
         {ITEMS.map((item) => {
           const active = isActive(item.href);
           return (
@@ -84,9 +94,9 @@ export function Sidebar({ businessName }: { businessName: string }) {
                 href={item.href}
                 aria-current={active ? "page" : undefined}
                 className={cn(
-                  "flex items-center gap-3 rounded-control px-3 py-2.5 text-sm transition-colors",
+                  "flex items-center gap-3 rounded-control px-3 py-2 text-sm transition-colors",
                   active
-                    ? "bg-brand-50 font-medium text-brand-700 dark:bg-brand-950/50 dark:text-brand-200"
+                    ? "bg-surface-sunken font-medium text-ink"
                     : "text-ink-muted hover:bg-surface-muted hover:text-ink",
                 )}
               >
@@ -97,6 +107,25 @@ export function Sidebar({ businessName }: { businessName: string }) {
           );
         })}
       </ul>
+
+      <div className="mt-auto space-y-1 border-t border-border pt-3">
+        <Link
+          href={`/${vendorSlug}`}
+          target="_blank"
+          className="flex items-center gap-3 rounded-control px-3 py-2 text-sm text-ink-muted transition-colors hover:bg-surface-muted hover:text-ink"
+        >
+          <ExternalLink className="size-4" aria-hidden />
+          View storefront
+        </Link>
+        <div className="flex items-center gap-3 rounded-control px-3 py-2">
+          <span className="flex size-8 shrink-0 items-center justify-center rounded-full border border-border bg-surface text-ink">
+            <Store className="size-4" aria-hidden />
+          </span>
+          <p className="min-w-0 flex-1 truncate text-sm font-medium text-ink">
+            {businessName}
+          </p>
+        </div>
+      </div>
     </nav>
   );
 }

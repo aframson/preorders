@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { IBM_Plex_Sans, Raleway } from "next/font/google";
+import { IBM_Plex_Sans } from "next/font/google";
 import { Toaster } from "sonner";
 import { NavigationProgress } from "@/components/navigation-progress";
 import "./globals.css";
@@ -9,12 +9,6 @@ const sans = IBM_Plex_Sans({
   subsets: ["latin"],
   display: "swap",
   weight: ["400", "500", "600", "700"],
-});
-
-const display = Raleway({
-  variable: "--font-display",
-  subsets: ["latin"],
-  display: "swap",
 });
 
 export const metadata: Metadata = {
@@ -43,7 +37,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#fdfbf8",
+  themeColor: "#f5f5f5",
   // Customers arrive inside the WhatsApp webview, where an accidental
   // double-tap zoom on a product grid is easy and annoying to undo.
   initialScale: 1,
@@ -54,7 +48,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="en"
-      className={`${sans.variable} ${display.variable} h-full antialiased`}
+      className={`${sans.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-canvas text-ink">
         <NavigationProgress />

@@ -76,10 +76,10 @@ export function VendorList({
               type="button"
               onClick={() => setFilter(item.value)}
               className={cn(
-                "inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full border px-3 text-sm font-medium transition-colors",
+                "inline-flex h-9 shrink-0 items-center gap-1.5 rounded-control border px-3 text-sm font-medium shadow-sm transition-colors",
                 active
-                  ? "border-brand-700 bg-brand-700 text-white"
-                  : "border-border bg-surface text-ink-muted hover:text-ink",
+                  ? "border-ink bg-ink text-white"
+                  : "border-border bg-surface text-ink-muted hover:bg-surface-muted hover:text-ink",
               )}
             >
               {item.label}

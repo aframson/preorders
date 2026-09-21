@@ -6,9 +6,9 @@ import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
-import { CartBar, useCart } from "@/components/public/cart";
+import { useCart } from "@/components/public/cart";
 import { AvailabilityTag } from "@/components/product-availability-tag";
-import { Button } from "@/components/ui/button";
+import { Button, ButtonLink } from "@/components/ui/button";
 import { QuantityStepper } from "@/components/ui/quantity-stepper";
 import { StickyActionBar } from "@/components/ui/sticky-action-bar";
 import { cn } from "@/lib/cn";
@@ -226,7 +226,7 @@ export function ProductDetail({
                 className={cn(
                   "size-14 shrink-0 overflow-hidden rounded-lg border-2 transition-colors",
                   index === imageIndex
-                    ? "border-brand-700"
+                    ? "border-ink"
                     : "border-transparent",
                 )}
               >
@@ -244,11 +244,11 @@ export function ProductDetail({
 
         <div className="space-y-6 px-5 pt-4">
           <div>
-            <h1 className="font-display text-xl font-bold tracking-tight text-ink">
+            <h1 className="font-display text-xl font-semibold tracking-tight text-ink">
               {product.name}
             </h1>
             <p
-              className="mt-1 font-display text-2xl font-bold text-ink"
+              className="mt-1 font-display text-2xl font-semibold text-ink"
               data-numeric
             >
               {formatGhs(unitPrice)}
@@ -274,7 +274,7 @@ export function ProductDetail({
                       "min-h-11 cursor-pointer rounded-control border px-4 py-2.5 text-sm transition-colors",
                       option.stockLimit === 0 && "cursor-not-allowed opacity-40",
                       selection[group.name] === option.id
-                        ? "border-brand-700 bg-brand-50 font-medium text-brand-800 dark:bg-brand-950/50 dark:text-brand-200"
+                        ? "border-ink bg-ink font-medium text-white"
                         : "border-border bg-surface text-ink",
                     )}
                   >
@@ -342,24 +342,30 @@ export function ProductDetail({
 
       {batch ? (
         <StickyActionBar>
-          <Button size="lg" block onClick={addToOrder} disabled={!canAdd}>
-            {soldOut
-              ? "Sold out"
-              : belowMoq
-                ? "Not enough left"
-                : (
-                    <>
-                      Add to bag &middot;{" "}
-                      <span data-numeric>{formatGhs(unitPrice * qty)}</span>
-                      {count > 0 ? (
-                        <span className="font-normal text-white/75">
-                          {" "}
-                          ({count} in bag)
-                        </span>
-                      ) : null}
-                    </>
-                  )}
-          </Button>
+          <div className="flex gap-2">
+            {count > 0 ? (
+              <ButtonLink
+                href={checkoutHref}
+                size="lg"
+                variant="secondary"
+                className="shrink-0"
+              >
+                Review bag ({count})
+              </ButtonLink>
+            ) : null}
+            <Button size="lg" block onClick={addToOrder} disabled={!canAdd}>
+              {soldOut
+                ? "Sold out"
+                : belowMoq
+                  ? "Not enough left"
+                  : (
+                      <>
+                        Add &middot;{" "}
+                        <span data-numeric>{formatGhs(unitPrice * qty)}</span>
+                      </>
+                    )}
+            </Button>
+          </div>
         </StickyActionBar>
       ) : (
         <StickyActionBar>
@@ -369,7 +375,6 @@ export function ProductDetail({
         </StickyActionBar>
       )}
 
-      {batch && <CartBar checkoutHref={checkoutHref} />}
     </>
   );
 }

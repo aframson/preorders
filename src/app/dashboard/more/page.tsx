@@ -3,7 +3,6 @@ import Link from "next/link";
 
 import { signOut } from "@/app/(auth)/login/actions";
 import { PushEnableCard } from "@/components/dashboard/push-enable-card";
-import { PageHeader } from "@/components/dashboard/page-header";
 import { CopyButton } from "@/components/share/copy-button";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
@@ -17,7 +16,7 @@ import { getVendorApproval } from "@/lib/vendor-approval";
 import { PickupLocationForm } from "./pickup-form";
 import { RefreshPayoutButton } from "./refresh-payout-button";
 
-export const metadata = { title: "More" };
+export const metadata = { title: "Settings" };
 
 export default async function MorePage() {
   const vendor = await requireVendor();
@@ -34,10 +33,43 @@ export default async function MorePage() {
   );
 
   return (
-    <div className="max-w-2xl space-y-6">
-      <PageHeader title="More" />
+    <div className="-mx-5 -my-6 lg:-mx-8 lg:-my-7">
+      <header className="min-h-20 border-b border-border px-5 py-4 lg:px-8">
+        <h1 className="text-xl font-semibold tracking-tight text-ink">
+          Settings
+        </h1>
+        <p className="mt-0.5 text-sm text-ink-muted">
+          Business details, notifications, fulfilment, and payouts.
+        </p>
+      </header>
 
-      <Card>
+      <div className="mx-auto grid max-w-5xl gap-8 px-5 py-6 lg:grid-cols-[11rem_minmax(0,1fr)] lg:px-8 lg:py-8">
+        <aside className="hidden lg:block">
+          <nav
+            aria-label="Settings sections"
+            className="sticky top-8 space-y-1 text-sm"
+          >
+            {[
+              ["#business", "Business"],
+              ["#notifications", "Notifications"],
+              ["#pickup", "Pickup"],
+              ["#payments", "Payments"],
+              ["#payouts", "Payouts"],
+            ].map(([href, label]) => (
+              <a
+                key={href}
+                href={href}
+                className="block rounded-control px-3 py-2 text-ink-muted transition-colors hover:bg-surface-muted hover:text-ink"
+              >
+                {label}
+              </a>
+            ))}
+          </nav>
+        </aside>
+
+        <main className="min-w-0 max-w-2xl space-y-6">
+
+      <Card className="scroll-mt-8" id="business">
         <CardHeader title="Your business" />
         <CardBody className="space-y-4">
           <dl className="space-y-3 text-sm">
@@ -70,7 +102,7 @@ export default async function MorePage() {
         </CardBody>
       </Card>
 
-      <Card>
+      <Card className="scroll-mt-8" id="notifications">
         <CardHeader title="Push alerts" />
         <CardBody>
           <PushEnableCard
@@ -79,7 +111,7 @@ export default async function MorePage() {
         </CardBody>
       </Card>
 
-      <Card>
+      <Card className="scroll-mt-8" id="pickup">
         <CardHeader title="Pickup location" />
         <CardBody className="space-y-3">
           <p className="text-sm text-ink-muted">
@@ -90,7 +122,7 @@ export default async function MorePage() {
         </CardBody>
       </Card>
 
-      <Card>
+      <Card className="scroll-mt-8" id="payments">
         <CardHeader title="Payments (Paystack)" />
         <CardBody className="space-y-3 text-sm">
           <dl className="space-y-3">
@@ -124,10 +156,10 @@ export default async function MorePage() {
           <p className="text-ink-muted">
             See{" "}
             <Link
-              href="/dashboard/earnings"
+              href="/dashboard/money#how-payouts-work"
               className="font-medium text-brand-700 underline-offset-2 hover:underline"
             >
-              Earnings
+              Money
             </Link>{" "}
             for how cash-out to MoMo works. Webhook endpoint (paste into
             Paystack → Settings → API Keys & Webhooks for both test and live):
@@ -147,7 +179,7 @@ export default async function MorePage() {
         </CardBody>
       </Card>
 
-      <Card>
+      <Card className="scroll-mt-8" id="payouts">
         <CardHeader title="Payouts" />
         <CardBody className="space-y-4">
           {approval.approved ? (
@@ -263,6 +295,8 @@ export default async function MorePage() {
           Sign out
         </Button>
       </form>
+        </main>
+      </div>
     </div>
   );
 }

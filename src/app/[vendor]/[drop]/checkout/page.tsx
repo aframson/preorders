@@ -25,7 +25,7 @@ export default async function CheckoutPage({
 
   return (
     <div className="flex min-h-dvh flex-col">
-      <header className="sticky top-0 z-30 border-b border-border bg-canvas/95 px-5 py-3 backdrop-blur">
+      <header className="sticky top-0 z-30 border-b border-border bg-surface/95 px-5 py-3 backdrop-blur">
         <Link
           href={base}
           className="inline-flex items-center gap-1 text-sm text-ink-muted"

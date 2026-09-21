@@ -41,13 +41,13 @@ export function BatchCard({
     <Link
       href={`/dashboard/drops/${batch.dropId}/batches/${batch.id}`}
       className={cn(
-        "block border border-border bg-surface p-5 transition-colors hover:border-brand-300",
+        "block rounded-card border border-border bg-surface p-5 shadow-sm transition-colors hover:border-border-strong hover:bg-surface-muted/30",
         className,
       )}
     >
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0">
-          <p className="font-display text-xl font-bold tracking-tight text-ink">
+          <p className="font-display text-xl font-semibold tracking-tight text-ink">
             Batch {batch.number}
           </p>
           <StatusPill tone={tone} pulse={tone === "closing"} className="mt-2">
@@ -73,7 +73,7 @@ export function BatchCard({
         <div>
           <dt className="text-xs text-ink-muted">Orders in</dt>
           <dd
-            className="font-display text-2xl font-bold text-ink"
+            className="font-display text-2xl font-semibold text-ink"
             data-numeric
           >
             {batch.orderCount}
@@ -82,7 +82,7 @@ export function BatchCard({
         <div>
           <dt className="text-xs text-ink-muted">Collected</dt>
           <dd
-            className="font-display text-2xl font-bold text-ink"
+            className="font-display text-2xl font-semibold text-ink"
             data-numeric
           >
             {formatGhs(batch.value)}

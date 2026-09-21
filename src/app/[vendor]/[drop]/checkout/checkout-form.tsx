@@ -93,9 +93,9 @@ export function CheckoutForm({
       <input type="hidden" name="batchId" value={batch.id} />
       <input type="hidden" name="lines" value={JSON.stringify(serialise(lines))} />
 
-      <div className="mx-auto w-full max-w-lg space-y-8 px-5 py-6">
-        <section className="space-y-3">
-          <h1 className="font-display text-xl font-bold text-ink">
+      <div className="mx-auto grid w-full max-w-4xl gap-8 px-5 py-6 lg:grid-cols-[0.9fr_1.1fr] lg:items-start lg:py-10">
+        <section className="space-y-3 lg:sticky lg:top-20">
+          <h1 className="font-display text-xl font-semibold text-ink">
             Review your order
           </h1>
 
@@ -151,6 +151,7 @@ export function CheckoutForm({
           </ul>
         </section>
 
+        <div className="space-y-8">
         <section className="space-y-4">
           <h2 className="font-display text-base font-semibold text-ink">
             Your details
@@ -224,7 +225,7 @@ export function CheckoutForm({
                   className={cn(
                     "flex min-h-11 cursor-pointer items-center justify-center rounded-control border px-3 text-sm font-medium transition-colors",
                     fulfilment === option
-                      ? "border-brand-600 bg-brand-50 text-brand-800"
+                      ? "border-ink bg-ink text-white"
                       : "border-border bg-surface text-ink-muted hover:border-border-strong",
                   )}
                 >
@@ -277,7 +278,7 @@ export function CheckoutForm({
           )}
         </section>
 
-        <section className="space-y-3 rounded-card border border-border bg-surface p-4">
+        <section className="space-y-3 rounded-card border border-border bg-surface p-4 shadow-sm">
           <MoneyRow label="Goods" amount={subtotal} />
           {freightEstimate > 0 && (
             <MoneyRow
@@ -308,11 +309,12 @@ export function CheckoutForm({
             </span>
           </p>
         </section>
+        </div>
       </div>
 
       <div className="flex-1" />
 
-      <StickyActionBar>
+      <StickyActionBar className="lg:mx-auto lg:w-full lg:max-w-4xl">
         {state.error && (
           <p
             ref={errorRef}

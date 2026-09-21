@@ -1,30 +1,40 @@
 import {
   AlertTriangle,
+  ArrowRight,
   CalendarClock,
   PackagePlus,
+  Plus,
   Ship,
   Timer,
   Wallet,
 } from "lucide-react";
+import Link from "next/link";
 
-import { ActionQueue, type ActionItem } from "@/components/dashboard/action-queue";
-import { BatchCard } from "@/components/dashboard/batch-card";
-import { HomeCalendarSheet } from "@/components/dashboard/home-calendar-sheet";
-import { VendorBatchCalendar } from "@/components/dashboard/vendor-batch-calendar";
+import {
+  ActionQueue,
+  type ActionItem,
+} from "@/components/dashboard/action-queue";
 import { ShareSheet } from "@/components/share/share-sheet";
 import { ButtonLink } from "@/components/ui/button";
-import { EmptyState } from "@/components/ui/empty-state";
+import { StatusPill } from "@/components/ui/status-pill";
 import { requireVendor } from "@/lib/auth";
 import { env } from "@/lib/env";
-import { batchTotals, getDashboardBatches } from "@/lib/queries/dashboard";
+import { formatGhs } from "@/lib/money";
+import {
+  batchTotals,
+  getDashboardBatches,
+  type DashboardBatch,
+} from "@/lib/queries/dashboard";
 import { absoluteUrl, dropPath, shareUrl } from "@/lib/site";
+import { BATCH_STATUS, batchTone } from "@/lib/status";
 import { createClient } from "@/lib/supabase/server";
+import { formatAccraDateTime } from "@/lib/time";
 import {
   getVendorApproval,
   type VendorApprovalState,
 } from "@/lib/vendor-approval";
 
-export const metadata = { title: "Home" };
+export const metadata = { title: "Overview" };
 
 export default async function DashboardHome() {
   const vendor = await requireVendor();
@@ -43,106 +53,228 @@ export default async function DashboardHome() {
       .order("created_at", { ascending: true }),
   ]);
 
+  const activeBatches = batches.filter(
+    (batch) => batch.status === "open" || batch.status === "scheduled",
+  );
+  const displayedBatches =
+    activeBatches.length > 0 ? activeBatches : batches.slice(0, 3);
+  const totals = batches.reduce(
+    (summary, batch) => {
+      const batchSummary = batchTotals(batch);
+      return {
+        orders: summary.orders + batchSummary.orderCount,
+        value: summary.value + batchSummary.value,
+      };
+    },
+    { orders: 0, value: 0 },
+  );
+
   const primaryDrop = drops?.[0];
   const live =
     batches.find((batch) => batch.status === "open") ??
     batches.find((batch) => batch.status === "scheduled") ??
     batches[0];
-
+  const linkDrop = live
+    ? drops?.find((drop) => drop.id === live.dropId) ?? primaryDrop
+    : primaryDrop;
   const actions = buildActionQueue({
     vendor,
     approval,
     drops: drops ?? [],
     batches,
   });
-
-  const link = primaryDrop
+  const link = linkDrop
     ? live
       ? shareUrl(
           vendor.slug,
-          primaryDrop.slug,
+          linkDrop.slug,
           live.number,
           env.NEXT_PUBLIC_SITE_URL,
         )
       : absoluteUrl(
-          dropPath(vendor.slug, primaryDrop.slug),
+          dropPath(vendor.slug, linkDrop.slug),
           env.NEXT_PUBLIC_SITE_URL,
         )
     : null;
 
-  const calendarBatches = batches.map((batch) => ({
-    id: batch.id,
-    dropId: batch.dropId,
-    dropTitle: batch.dropTitle,
-    number: batch.number,
-    status: batch.status,
-    opensAt: batch.opensAt,
-    closesAt: batch.closesAt,
-    expectedDeliveryAt: batch.expectedDeliveryAt,
-  }));
-
   return (
-    <div className="-mx-5 -my-6 grid min-h-[calc(100dvh-8rem)] grid-cols-1 items-stretch lg:-mx-8 lg:-my-8 xl:min-h-[calc(100dvh-0px)] xl:grid-cols-2">
-      <div className="min-w-0 space-y-8 border-b border-border px-5 py-6 lg:px-8 lg:py-8 xl:border-r xl:border-b-0">
+    <div className="-mx-5 -my-6 lg:-mx-8 lg:-my-7">
+      <header className="flex min-h-20 flex-wrap items-center justify-between gap-4 border-b border-border px-5 py-4 lg:px-8">
         <div>
-          <p className="text-sm text-ink-muted">Welcome back</p>
-          <h1 className="font-display text-2xl font-bold tracking-tight text-ink">
-            {vendor.businessName}
+          <h1 className="text-xl font-semibold tracking-tight text-ink">
+            Overview
           </h1>
+          <p className="mt-0.5 text-sm text-ink-muted">
+            Run today&apos;s preorder work for {vendor.businessName}.
+          </p>
         </div>
+        <ButtonLink href="/dashboard/drops/new" size="sm">
+          <Plus className="size-4" aria-hidden />
+          New drop
+        </ButtonLink>
+      </header>
 
-        {live ? (
-          <BatchCard
-            batch={{
-              id: live.id,
-              dropId: live.dropId,
-              number: live.number,
-              status: live.status,
-              opensAt: live.opensAt,
-              closesAt: live.closesAt,
-              ...batchTotals(live),
-            }}
-            className="rounded-none"
-          />
-        ) : (
-          <EmptyState
-            icon={CalendarClock}
-            title="No batch running"
-            description="Schedule a batch to start taking orders on your link."
-            action={
-              primaryDrop ? (
-                <ButtonLink href={`/dashboard/drops/${primaryDrop.id}/batches`}>
-                  Schedule a batch
-                </ButtonLink>
-              ) : (
-                <ButtonLink href="/dashboard/drops/new">Create a drop</ButtonLink>
-              )
-            }
-          />
-        )}
+      <div className="mx-auto max-w-5xl space-y-8 px-5 py-6 lg:px-8 lg:py-8">
+        <section aria-label="Business summary">
+          <dl className="grid overflow-hidden rounded-card border border-border bg-surface shadow-sm sm:grid-cols-3 sm:divide-x sm:divide-y-0">
+            <SummaryStat label="Drops" value={String(drops?.length ?? 0)} />
+            <SummaryStat label="Paid orders" value={String(totals.orders)} />
+            <SummaryStat label="Goods collected" value={formatGhs(totals.value)} />
+          </dl>
+        </section>
 
         <section className="space-y-3">
-          <h2 className="font-display font-semibold text-ink">Needs you</h2>
+          <SectionHeading
+            title="Needs you"
+            description="The next actions blocking orders, freight, or customers."
+            count={actions.length}
+          />
           <ActionQueue items={actions} />
         </section>
 
-        {link && primaryDrop && (
-          <ShareSheet
-            url={link}
-            businessName={vendor.businessName}
-            dropTitle={primaryDrop.title}
-            batchNumber={live?.number}
-            statusImageHref={`${dropPath(vendor.slug, primaryDrop.slug)}/status-image`}
+        <section className="space-y-3">
+          <SectionHeading
+            title={activeBatches.length > 0 ? "Active batches" : "Recent batches"}
+            description={
+              activeBatches.length > 0
+                ? "Open and scheduled selling windows."
+                : "Your latest preorder activity."
+            }
+            action={
+              <Link
+                href="/dashboard/drops"
+                className="inline-flex items-center gap-1 text-sm font-medium text-ink-muted hover:text-ink"
+              >
+                All drops
+                <ArrowRight className="size-3.5" aria-hidden />
+              </Link>
+            }
           />
-        )}
+
+          {displayedBatches.length > 0 ? (
+            <ul className="divide-y divide-border overflow-hidden rounded-card border border-border bg-surface shadow-sm">
+              {displayedBatches.map((batch) => (
+                <BatchRow key={batch.id} batch={batch} />
+              ))}
+            </ul>
+          ) : (
+            <div className="flex min-h-48 flex-col items-center justify-center rounded-card border border-dashed border-border-strong bg-surface px-6 text-center">
+              <CalendarClock className="size-5 text-ink-subtle" aria-hidden />
+              <p className="mt-3 font-medium text-ink">No batches yet</p>
+              <p className="mt-1 max-w-sm text-sm text-ink-muted">
+                Create a drop, add products, then schedule the first
+                selling window.
+              </p>
+              <ButtonLink href="/dashboard/drops/new" size="sm" className="mt-4">
+                Create a drop
+              </ButtonLink>
+            </div>
+          )}
+        </section>
+
+        {link && linkDrop ? (
+          <section className="space-y-3">
+            <SectionHeading
+              title="Share your link"
+              description="Send customers to the batch that is currently relevant."
+            />
+            <ShareSheet
+              url={link}
+              businessName={vendor.businessName}
+              dropTitle={linkDrop.title}
+              batchNumber={live?.number}
+              statusImageHref={`${dropPath(vendor.slug, linkDrop.slug)}/status-image`}
+            />
+          </section>
+        ) : null}
       </div>
-
-      <aside className="hidden min-h-0 min-w-0 flex-col xl:flex xl:min-h-full">
-        <VendorBatchCalendar batches={calendarBatches} />
-      </aside>
-
-      <HomeCalendarSheet batches={calendarBatches} />
     </div>
+  );
+}
+
+function SummaryStat({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="border-b border-border px-5 py-4 last:border-b-0 sm:border-b-0">
+      <dt className="text-xs text-ink-muted">{label}</dt>
+      <dd className="mt-1 text-2xl font-semibold tracking-tight text-ink" data-numeric>
+        {value}
+      </dd>
+    </div>
+  );
+}
+
+function SectionHeading({
+  title,
+  description,
+  count,
+  action,
+}: {
+  title: string;
+  description: string;
+  count?: number;
+  action?: React.ReactNode;
+}) {
+  return (
+    <div className="flex items-end justify-between gap-4">
+      <div>
+        <div className="flex items-center gap-2">
+          <h2 className="text-base font-semibold text-ink">{title}</h2>
+          {count !== undefined ? (
+            <span className="rounded-full bg-surface-sunken px-2 py-0.5 text-xs text-ink-muted">
+              {count}
+            </span>
+          ) : null}
+        </div>
+        <p className="mt-0.5 text-sm text-ink-muted">{description}</p>
+      </div>
+      {action}
+    </div>
+  );
+}
+
+function BatchRow({ batch }: { batch: DashboardBatch }) {
+  const totals = batchTotals(batch);
+  const closesAt = new Date(batch.closesAt);
+
+  return (
+    <li>
+      <Link
+        href={`/dashboard/drops/${batch.dropId}/batches/${batch.id}`}
+        className="flex items-center gap-4 px-4 py-4 transition-colors hover:bg-surface-muted sm:px-5"
+      >
+        <span className="flex size-10 shrink-0 items-center justify-center rounded-control border border-border bg-surface-muted text-sm font-semibold text-ink">
+          B{batch.number}
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="flex flex-wrap items-center gap-2">
+            <span className="truncate font-medium text-ink">
+              {batch.dropTitle}
+            </span>
+            <StatusPill
+              tone={batchTone(batch.status, closesAt)}
+              className="!px-2 !py-0.5 !text-[11px]"
+            >
+              {BATCH_STATUS[batch.status].label}
+            </StatusPill>
+          </span>
+          <span className="mt-0.5 block truncate text-sm text-ink-muted">
+            {batch.status === "scheduled" ? "Opens" : "Closes"}{" "}
+            {formatAccraDateTime(
+              batch.status === "scheduled" ? batch.opensAt : batch.closesAt,
+            )}
+          </span>
+        </span>
+        <span className="hidden shrink-0 text-right sm:block">
+          <span className="block text-sm font-medium text-ink" data-numeric>
+            {totals.orderCount} orders
+          </span>
+          <span className="block text-xs text-ink-muted" data-numeric>
+            {formatGhs(totals.value)}
+          </span>
+        </span>
+        <ArrowRight className="size-4 shrink-0 text-ink-subtle" aria-hidden />
+      </Link>
+    </li>
   );
 }
 

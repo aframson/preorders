@@ -39,10 +39,10 @@ export function NavChip({
         });
       }}
       className={cn(
-        "inline-flex shrink-0 items-center justify-center gap-1.5 rounded-full px-3.5 py-2 text-sm transition-colors disabled:opacity-80",
+        "inline-flex h-9 shrink-0 items-center justify-center gap-1.5 rounded-control border px-3 text-sm shadow-sm transition-colors disabled:opacity-80",
         active
-          ? "bg-brand-700 font-medium text-white"
-          : "bg-surface-muted text-ink-muted hover:text-ink",
+          ? "border-ink bg-ink font-medium text-ink-inverse"
+          : "border-border bg-surface text-ink-muted hover:bg-surface-muted hover:text-ink",
         className,
       )}
     >

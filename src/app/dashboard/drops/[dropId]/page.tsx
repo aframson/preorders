@@ -145,7 +145,7 @@ export default async function DropProductsPage({
       <Link
         href={`/dashboard/drops/${dropId}/products/new`}
         aria-label="Add product"
-        className="grain-ink fixed right-5 bottom-24 z-40 flex size-14 items-center justify-center rounded-full bg-brand-700 text-white shadow-sheet hover:bg-brand-800 lg:right-8 lg:bottom-8"
+        className="fixed right-5 bottom-24 z-40 flex size-14 items-center justify-center rounded-full border border-ink bg-ink text-white shadow-sheet transition-colors hover:bg-brand-700 lg:right-8 lg:bottom-8"
       >
         <Plus className="size-6" aria-hidden />
       </Link>

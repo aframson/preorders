@@ -29,7 +29,7 @@ export default async function DropLayout({
     <>
       <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
-          <h1 className="truncate font-display text-2xl font-bold tracking-tight text-ink">
+          <h1 className="truncate font-display text-2xl font-semibold tracking-tight text-ink">
             {drop.title}
           </h1>
           <p className="mt-1 truncate text-sm text-ink-muted">{publicPath}</p>

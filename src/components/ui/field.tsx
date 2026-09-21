@@ -13,7 +13,7 @@ export function Label({ className, ...props }: ComponentProps<"label">) {
 }
 
 const control =
-  "w-full rounded-control border border-border bg-surface px-3.5 text-base text-ink placeholder:text-ink-subtle transition-colors focus:border-brand-500 focus:outline-none disabled:opacity-60 aria-invalid:border-danger";
+  "w-full rounded-control border border-border-strong bg-surface px-3.5 text-base text-ink shadow-sm placeholder:text-ink-subtle transition-colors focus:border-ink focus:outline-none focus:ring-1 focus:ring-ink disabled:bg-surface-muted disabled:opacity-60 aria-invalid:border-danger aria-invalid:ring-danger";
 
 export function Input({ className, ...props }: ComponentProps<"input">) {
   // 56px on mobile: large enough to hit reliably, and 16px text stops iOS

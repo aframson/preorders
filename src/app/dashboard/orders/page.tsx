@@ -17,8 +17,7 @@ export default async function OrdersPage() {
     .select(
       "id, title, batches(id, number, orders(id, code, public_token, status, fulfilment, goods_total, created_at, customers(name, phone)))",
     )
-    .eq("vendor_id", vendor.id)
-    .is("archived_at", null);
+    .eq("vendor_id", vendor.id);
 
   const orders = (drops ?? []).flatMap((drop) =>
     (drop.batches ?? []).flatMap((batch) =>

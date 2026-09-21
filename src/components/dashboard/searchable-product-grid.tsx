@@ -70,7 +70,7 @@ export function SearchableProductGrid({
                   href={`/dashboard/drops/${dropId}/products/${product.id}`}
                   className="group block"
                 >
-                  <div className="relative aspect-4/5 overflow-hidden rounded-card border border-border bg-surface-muted">
+                  <div className="relative aspect-4/5 overflow-hidden rounded-control border border-border bg-surface-muted shadow-sm transition-transform duration-200 group-hover:-translate-y-0.5">
                     {product.coverPath ? (
                       <Image
                         src={publicUrl(BUCKETS.productImages, product.coverPath)}

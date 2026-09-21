@@ -86,7 +86,6 @@ export default async function PublicDropPage({
         businessName={vendor.businessName}
         logoPath={vendor.logoPath}
         batchesDelivered={vendor.batchesDelivered}
-        description={drop.description}
         href={vendorPath(vendorSlug)}
         actions={
           <ShopHeaderActions
@@ -95,6 +94,20 @@ export default async function PublicDropPage({
           />
         }
       />
+
+      <section className="border-b border-border bg-surface px-5 py-5">
+        <div className="mx-auto max-w-3xl">
+          <p className="text-xs font-medium text-ink-subtle">Preorder link</p>
+          <h2 className="mt-1 text-2xl font-semibold tracking-tight text-ink">
+            {drop.title}
+          </h2>
+          {drop.description ? (
+            <p className="mt-2 max-w-2xl text-sm leading-relaxed text-ink-muted">
+              {drop.description}
+            </p>
+          ) : null}
+        </div>
+      </section>
 
       <div className="sticky top-0 z-20">
         <BatchBanner

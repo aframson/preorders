@@ -6,15 +6,16 @@ import type { ComponentProps } from "react";
 import { cn } from "@/lib/cn";
 
 export const buttonVariants = cva(
-  "relative inline-flex items-center justify-center gap-2 overflow-hidden rounded-control font-medium transition-colors duration-150 disabled:pointer-events-none disabled:opacity-50",
+  "relative inline-flex items-center justify-center gap-2 rounded-control border border-transparent font-medium shadow-sm transition-colors duration-150 disabled:pointer-events-none disabled:opacity-50",
   {
     variants: {
       variant: {
-        primary: "grain-ink bg-brand-700 text-white hover:bg-brand-800",
+        primary: "border-ink bg-ink text-ink-inverse hover:bg-brand-700",
         secondary:
-          "grain-paper border border-border bg-surface text-ink hover:bg-surface-muted",
-        ghost: "text-ink-muted hover:bg-surface-muted hover:text-ink",
-        danger: "grain-ink bg-danger text-white hover:brightness-95",
+          "border-border-strong bg-surface text-ink hover:bg-surface-muted",
+        ghost:
+          "border-transparent bg-transparent text-ink-muted shadow-none hover:bg-surface-muted hover:text-ink",
+        danger: "border-danger bg-danger text-white hover:brightness-95",
       },
       size: {
         // Minimum 44px tall on anything a thumb has to hit.

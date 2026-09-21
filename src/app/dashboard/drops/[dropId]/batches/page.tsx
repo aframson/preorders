@@ -74,7 +74,7 @@ export default async function BatchesPage({
               <li key={batch.id}>
                 <Link
                   href={`/dashboard/drops/${dropId}/batches/${batch.id}`}
-                  className="flex flex-wrap items-center justify-between gap-4 rounded-card border border-border bg-surface px-5 py-4 transition-colors hover:border-brand-300"
+                  className="flex flex-wrap items-center justify-between gap-4 rounded-card border border-border bg-surface px-5 py-4 shadow-sm transition-colors hover:border-border-strong hover:bg-surface-muted/30"
                 >
                   <div className="min-w-0">
                     <p className="font-display font-semibold text-ink">

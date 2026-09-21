@@ -31,7 +31,7 @@ export function VendorHeader({
 }) {
   const identity = (
     <>
-      <div className="flex size-11 shrink-0 items-center justify-center overflow-hidden rounded-full bg-brand-50 dark:bg-brand-950">
+      <div className="flex size-11 shrink-0 items-center justify-center overflow-hidden rounded-full border border-border bg-surface-muted">
         {logoPath ? (
           <Image
             src={publicUrl(BUCKETS.vendorAssets, logoPath)}
@@ -41,7 +41,7 @@ export function VendorHeader({
             className="size-full object-cover"
           />
         ) : (
-          <Store className="size-5 text-brand-700" aria-hidden />
+          <Store className="size-5 text-ink-muted" aria-hidden />
         )}
       </div>
 
@@ -84,7 +84,7 @@ export function VendorHeader({
   );
 
   return (
-    <header className="border-b border-border px-5 py-4">
+    <header className="border-b border-border bg-surface px-5 py-3.5">
       <div className="mx-auto flex max-w-3xl items-center gap-3">
         {href ? (
           <Link href={href} className="flex min-w-0 flex-1 items-center gap-3">

@@ -13,8 +13,11 @@ export function Tabs({
   const pathname = usePathname();
 
   return (
-    <div className="-mx-5 mb-6 overflow-x-auto border-b border-border px-5 scrollbar-none lg:-mx-8 lg:px-8">
-      <nav className="flex gap-1" aria-label="Sections">
+    <div className="mb-6 overflow-x-auto scrollbar-none">
+      <nav
+        className="inline-flex min-w-max gap-1 rounded-control bg-surface-sunken p-1"
+        aria-label="Sections"
+      >
         {items.map((item) => {
           const active = item.exact
             ? pathname === item.href
@@ -26,10 +29,10 @@ export function Tabs({
               href={item.href}
               aria-current={active ? "page" : undefined}
               className={cn(
-                "shrink-0 border-b-2 px-3 py-3 text-sm transition-colors",
+                "shrink-0 rounded-md px-3 py-1.5 text-sm transition-colors",
                 active
-                  ? "border-brand-700 font-medium text-brand-700 dark:text-brand-300"
-                  : "border-transparent text-ink-muted hover:text-ink",
+                  ? "bg-surface font-medium text-ink shadow-sm"
+                  : "text-ink-muted hover:text-ink",
               )}
             >
               {item.label}

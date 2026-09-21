@@ -47,7 +47,7 @@ export default async function DropsPage() {
     <>
       <PageHeader
         title="Drops"
-        description="Each drop is a permanent link with batches running inside it."
+        description="Permanent preorder catalogues with products and repeat selling windows."
         action={
           <ButtonLink href="/dashboard/drops/new" size="sm">
             <Plus className="size-4" aria-hidden />
@@ -60,7 +60,7 @@ export default async function DropsPage() {
         <EmptyState
           icon={Layers}
           title="No drops yet"
-          description="A drop holds your products and runs your batches. Most vendors only ever need one."
+          description="A drop holds your products and runs repeat batches. Most vendors only need one."
           action={
             <ButtonLink href="/dashboard/drops/new">
               Create your first drop

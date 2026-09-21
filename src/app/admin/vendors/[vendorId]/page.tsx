@@ -69,7 +69,7 @@ export default async function AdminVendorPage({
         <div className="mt-4 flex flex-wrap items-start justify-between gap-4">
           <div>
             <div className="flex flex-wrap items-center gap-2">
-              <h1 className="font-display text-2xl font-bold tracking-tight text-ink">
+              <h1 className="font-display text-2xl font-semibold tracking-tight text-ink">
                 {vendor.businessName}
               </h1>
               <StatusBadge status={vendor.approval.status} />
@@ -196,7 +196,7 @@ function Metric({
     <div
       className={`rounded-card border border-border bg-surface p-4 ${wide ? "col-span-2 lg:col-span-1" : ""}`}
     >
-      <Icon className="size-4 text-brand-700" aria-hidden />
+      <Icon className="size-4 text-ink-muted" aria-hidden />
       <p className="mt-3 text-xs text-ink-muted">{label}</p>
       <p className="mt-0.5 truncate font-display text-lg font-semibold text-ink">
         {value}

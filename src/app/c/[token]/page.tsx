@@ -76,7 +76,7 @@ export default async function CustomerPortalPage({
 
       <main className="mx-auto max-w-lg space-y-8 px-5 py-6">
         <section className="space-y-1">
-          <h1 className="font-display text-2xl font-bold tracking-tight text-ink">
+          <h1 className="font-display text-2xl font-semibold tracking-tight text-ink">
             Hi {portal.customerName.split(/\s+/)[0]}
           </h1>
           <p className="text-sm text-ink-muted">

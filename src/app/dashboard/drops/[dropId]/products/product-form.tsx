@@ -102,8 +102,32 @@ export function ProductForm({
     <form action={submit} className="pb-4">
       <input type="hidden" name="payload" value={JSON.stringify(payload)} />
 
-      <div className="max-w-2xl space-y-8">
-        <section className="space-y-2">
+      <div className="grid max-w-5xl gap-8 lg:grid-cols-[10rem_minmax(0,1fr)]">
+        <aside className="hidden lg:block">
+          <nav
+            aria-label="Product sections"
+            className="sticky top-8 space-y-1 text-sm"
+          >
+            {[
+              ["#photos", "Photos"],
+              ["#basics", "Basics"],
+              ["#shipping-size", "Shipping"],
+              ["#options", "Options"],
+              ["#inventory", "Inventory"],
+            ].map(([href, label]) => (
+              <a
+                key={href}
+                href={href}
+                className="block rounded-control px-3 py-2 text-ink-muted transition-colors hover:bg-surface-muted hover:text-ink"
+              >
+                {label}
+              </a>
+            ))}
+          </nav>
+        </aside>
+
+        <div className="min-w-0 max-w-2xl space-y-8">
+        <section id="photos" className="scroll-mt-8 space-y-2">
           <Label>Photos</Label>
           <ImageUploader
             vendorId={vendorId}
@@ -113,7 +137,7 @@ export function ProductForm({
           />
         </section>
 
-        <section className="space-y-5">
+        <section id="basics" className="scroll-mt-8 space-y-5">
           <Field label="Product name" htmlFor="name" error={state.error}>
             <Input
               id="name"
@@ -195,7 +219,7 @@ export function ProductForm({
                     key={key}
                     className={
                       selected
-                        ? "flex cursor-pointer flex-col gap-0.5 rounded-card border border-brand-500 bg-brand-50 px-4 py-3 dark:bg-brand-950/40"
+                        ? "flex cursor-pointer flex-col gap-0.5 rounded-card border border-ink bg-surface-muted px-4 py-3"
                         : "flex cursor-pointer flex-col gap-0.5 rounded-card border border-border bg-surface px-4 py-3"
                     }
                   >
@@ -206,7 +230,7 @@ export function ProductForm({
                         value={key}
                         checked={selected}
                         onChange={() => set("availability", key)}
-                        className="size-4 accent-brand-700"
+                      className="size-4 accent-ink"
                       />
                       <span className="text-sm font-medium text-ink">
                         {option.label}
@@ -222,7 +246,10 @@ export function ProductForm({
           </fieldset>
         </section>
 
-        <section className="space-y-4 rounded-card border border-border bg-surface p-5">
+        <section
+          id="shipping-size"
+          className="scroll-mt-8 space-y-4 rounded-card border border-border bg-surface p-5 shadow-sm"
+        >
           <div>
             <h2 className="font-display font-semibold text-ink">Shipping size</h2>
             <p className="mt-1 text-sm text-ink-muted">
@@ -241,7 +268,7 @@ export function ProductForm({
                   set("weightGrams", preset.weightGrams);
                   set("volumeCm3", preset.volumeCm3);
                 }}
-                className="rounded-full border border-border px-3 py-1.5 text-xs text-ink-muted transition-colors hover:border-brand-400 hover:text-brand-700"
+                className="rounded-control border border-border px-3 py-1.5 text-xs text-ink-muted transition-colors hover:border-ink hover:text-ink"
               >
                 {preset.label}
               </button>
@@ -291,7 +318,7 @@ export function ProductForm({
           </div>
         </section>
 
-        <section className="space-y-4">
+        <section id="options" className="scroll-mt-8 space-y-4">
           <div>
             <h2 className="font-display font-semibold text-ink">Options</h2>
             <p className="mt-1 text-sm text-ink-muted">
@@ -308,7 +335,10 @@ export function ProductForm({
           />
         </section>
 
-        <section className="grid gap-4 sm:grid-cols-2">
+        <section
+          id="inventory"
+          className="scroll-mt-8 grid gap-4 sm:grid-cols-2"
+        >
           <Field
             label="Stock limit"
             htmlFor="stockLimit"
@@ -354,7 +384,7 @@ export function ProductForm({
             type="checkbox"
             checked={values.published}
             onChange={(event) => set("published", event.target.checked)}
-            className="size-5 accent-brand-700"
+            className="size-5 accent-ink"
           />
           <span className="text-sm">
             <span className="block font-medium text-ink">
@@ -385,6 +415,7 @@ export function ProductForm({
             Delete product
           </Button>
         )}
+        </div>
       </div>
 
       <StickyActionBar className="-mx-5 mt-8 lg:-mx-8 lg:px-8">

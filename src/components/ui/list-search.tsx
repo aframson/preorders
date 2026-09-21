@@ -43,7 +43,7 @@ export function ListSearch({
         placeholder={placeholder}
         onChange={(event) => onChange(event.target.value)}
         className={cn(
-          "h-12 w-full rounded-control border border-border/70 bg-surface pr-10 pl-10 text-base text-ink shadow-none placeholder:text-ink-subtle transition-colors focus:border-border focus:outline-none focus:shadow-none",
+          "h-11 w-full rounded-control border border-border-strong bg-surface pr-10 pl-10 text-base text-ink shadow-sm placeholder:text-ink-subtle transition-colors focus:border-ink focus:outline-none focus:ring-1 focus:ring-ink",
           inputClassName,
         )}
       />

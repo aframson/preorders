@@ -1,18 +1,19 @@
+import type { ComponentProps } from "react";
+
 import { cn } from "@/lib/cn";
 
 export function Card({
   className,
   children,
-}: {
-  className?: string;
-  children: React.ReactNode;
-}) {
+  ...props
+}: ComponentProps<"div">) {
   return (
     <div
       className={cn(
-        "rounded-card border border-border bg-surface",
+        "rounded-card border border-border bg-surface shadow-sm",
         className,
       )}
+      {...props}
     >
       {children}
     </div>
@@ -33,7 +34,7 @@ export function CardHeader({
   return (
     <div
       className={cn(
-        "flex items-start justify-between gap-3 border-b border-border px-5 py-4",
+        "flex items-start justify-between gap-4 border-b border-border px-5 py-4",
         className,
       )}
     >

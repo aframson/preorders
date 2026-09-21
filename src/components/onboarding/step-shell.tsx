@@ -28,7 +28,7 @@ export function StepShell({
               aria-current={current ? "step" : undefined}
               className={cn(
                 "h-1.5 flex-1 rounded-full transition-colors",
-                done || current ? "bg-brand-700" : "bg-border",
+                done || current ? "bg-ink" : "bg-border",
               )}
             >
               <span className="sr-only">
@@ -43,7 +43,7 @@ export function StepShell({
       <p className="mt-4 text-xs font-medium tracking-wide text-ink-subtle uppercase">
         Step {step} of {STEPS.length}
       </p>
-      <h1 className="mt-1 font-display text-2xl font-bold tracking-tight">
+      <h1 className="mt-1 font-display text-2xl font-semibold tracking-tight">
         {title}
       </h1>
       {description && (

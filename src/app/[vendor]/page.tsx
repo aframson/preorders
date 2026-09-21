@@ -64,11 +64,11 @@ export default async function PublicVendorPage({
       />
 
       <main className="mx-auto w-full max-w-3xl flex-1 px-5 py-6">
-        <h2 className="font-display text-lg font-semibold text-ink">
-          {drops.length === 1 ? "The batch" : "Batches"}
+        <h2 className="font-display text-xl font-semibold text-ink">
+          Preorder links
         </h2>
         <p className="mt-1 text-sm text-ink-muted">
-          Each link is a running preorder. Open one to pick and pay.
+          Choose a catalogue to see what is open, upcoming, or closed.
         </p>
 
         <SearchableVendorDrops

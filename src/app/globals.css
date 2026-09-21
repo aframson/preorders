@@ -3,40 +3,39 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 /* ---------------------------------------------------------------------------
-   Aubergine & Cream
-   The brand sits in the plum family so it never collides with the status
-   palette. Status colours are reserved: they only ever describe batch or
-   order state, never decoration.
+   Preorders monochrome
+   Neutral surfaces carry the product. Colour is reserved for operational
+   status, warnings, and money so it always communicates meaning.
 --------------------------------------------------------------------------- */
 
 :root {
-  --canvas: #fdfbf8;
+  --canvas: #f5f5f5;
   --surface: #ffffff;
-  --surface-muted: #f7f3ee;
-  --surface-sunken: #f2ece5;
+  --surface-muted: #fafafa;
+  --surface-sunken: #f0f0f0;
 
-  --ink: #1a1614;
-  --ink-muted: #6b615c;
-  --ink-subtle: #9a8f88;
-  --ink-inverse: #fdfbf8;
+  --ink: #171717;
+  --ink-muted: #666666;
+  --ink-subtle: #8a8a8a;
+  --ink-inverse: #ffffff;
 
-  --border: #e8e1db;
-  --border-strong: #d6ccc3;
+  --border: #e5e5e5;
+  --border-strong: #d4d4d4;
 }
 
 .dark {
-  --canvas: #14110f;
-  --surface: #1f1a18;
-  --surface-muted: #262020;
-  --surface-sunken: #100e0d;
+  --canvas: #0a0a0a;
+  --surface: #171717;
+  --surface-muted: #202020;
+  --surface-sunken: #050505;
 
-  --ink: #f5f1ec;
-  --ink-muted: #a89d96;
-  --ink-subtle: #7a6f68;
-  --ink-inverse: #14110f;
+  --ink: #fafafa;
+  --ink-muted: #a3a3a3;
+  --ink-subtle: #737373;
+  --ink-inverse: #0a0a0a;
 
-  --border: #332b27;
-  --border-strong: #453b35;
+  --border: #2e2e2e;
+  --border-strong: #404040;
 }
 
 /* `static` keeps every token emitted as a CSS variable even when no utility
@@ -44,17 +43,17 @@
    breaks the OG card renderer and anywhere else a token is read dynamically. */
 @theme static {
   /* Brand ---------------------------------------------------------------- */
-  --color-brand-50: #faf4f8;
-  --color-brand-100: #f3e8ef;
-  --color-brand-200: #e5cdde;
-  --color-brand-300: #d0a8c4;
-  --color-brand-400: #b173a0;
-  --color-brand-500: #8b3f7a;
-  --color-brand-600: #6e3560;
-  --color-brand-700: #5a2a4e;
-  --color-brand-800: #4a2340;
-  --color-brand-900: #3b1b33;
-  --color-brand-950: #240f1f;
+  --color-brand-50: #f5f5f5;
+  --color-brand-100: #e5e5e5;
+  --color-brand-200: #d4d4d4;
+  --color-brand-300: #a3a3a3;
+  --color-brand-400: #737373;
+  --color-brand-500: #525252;
+  --color-brand-600: #404040;
+  --color-brand-700: #262626;
+  --color-brand-800: #171717;
+  --color-brand-900: #0a0a0a;
+  --color-brand-950: #000000;
 
   /* Status — reserved, never used for branding --------------------------- */
   --color-open: #047857;
@@ -75,15 +74,14 @@
   --color-danger-tint: #fef2f2;
 
   /* Shape ---------------------------------------------------------------- */
-  --radius-control: 0.75rem;
-  --radius-card: 1rem;
-  --radius-sheet: 1.5rem;
+  --radius-control: 0.625rem;
+  --radius-card: 0.875rem;
+  --radius-sheet: 1.25rem;
 
-  /* Depth comes from borders. These are the only two shadows in the system. */
-  --shadow-bar: 0 -1px 0 0 rgb(26 22 20 / 0.06), 0 -12px 28px -16px rgb(26 22 20 / 0.25);
-  --shadow-sheet: 0 -2px 0 0 rgb(26 22 20 / 0.04), 0 -24px 48px -24px rgb(26 22 20 / 0.35);
+  --shadow-bar: 0 -1px 0 0 rgb(0 0 0 / 0.06), 0 -10px 24px -18px rgb(0 0 0 / 0.2);
+  --shadow-sheet: 0 1px 2px rgb(0 0 0 / 0.04), 0 14px 40px -24px rgb(0 0 0 / 0.24);
 
-  --font-display: var(--font-display), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
   --font-sans: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
 }
 
@@ -741,18 +739,18 @@
     background-image: linear-gradient(
         90deg,
         var(--canvas) 0%,
-        rgba(253, 251, 248, 0.4) 8%,
+        rgba(245, 245, 245, 0.4) 8%,
         transparent 18%,
         transparent 38%,
-        rgba(253, 251, 248, 0.28) 58%,
-        rgba(253, 251, 248, 0.72) 78%,
+        rgba(245, 245, 245, 0.28) 58%,
+        rgba(245, 245, 245, 0.72) 78%,
         var(--canvas) 94%
       ),
       linear-gradient(
         180deg,
         transparent 38%,
-        rgba(253, 251, 248, 0.28) 62%,
-        rgba(253, 251, 248, 0.7) 82%,
+        rgba(245, 245, 245, 0.28) 62%,
+        rgba(245, 245, 245, 0.7) 82%,
         var(--canvas) 96%
       );
     background-size: 100% 100%, 100% 100%;
@@ -811,8 +809,8 @@
     background-image: linear-gradient(
       180deg,
       transparent 0%,
-      rgba(253, 251, 248, 0.35) 38%,
-      rgba(253, 251, 248, 0.82) 72%,
+      rgba(245, 245, 245, 0.35) 38%,
+      rgba(245, 245, 245, 0.82) 72%,
       var(--canvas) 100%
     );
   }

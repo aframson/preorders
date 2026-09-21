@@ -169,5 +169,5 @@ export async function resetVendorApproval(vendorId: string): Promise<void> {
 export function isMissingApprovalTable(
   error: { code?: string } | null | undefined,
 ): boolean {
-  return error?.code === "42P01";
+  return error?.code === "42P01" || error?.code === "PGRST205";
 }

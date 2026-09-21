@@ -46,7 +46,7 @@ export function ProductCard({
 
   return (
     <Link href={href} className="group block">
-      <div className="relative aspect-4/5 overflow-hidden rounded-card border border-border bg-surface-muted">
+      <div className="relative aspect-4/5 overflow-hidden rounded-control border border-border bg-surface-muted shadow-sm transition-transform duration-200 group-hover:-translate-y-0.5">
         {cover ? (
           <>
             <Image
@@ -56,7 +56,6 @@ export function ProductCard({
               sizes="(min-width: 640px) 33vw, 50vw"
               className="object-cover transition-opacity group-hover:opacity-90"
             />
-            <span className="bg-grain-heavy pointer-events-none absolute inset-0 mix-blend-overlay opacity-60" />
           </>
         ) : (
           <div className="flex size-full items-center justify-center text-ink-subtle">
@@ -71,9 +70,14 @@ export function ProductCard({
         )}
       </div>
 
-      <p className="mt-2 line-clamp-2 text-sm font-medium text-ink">
+      <p className="mt-2.5 line-clamp-2 text-sm font-medium text-ink">
         {product.name}
       </p>
+      {product.variants.length > 0 ? (
+        <p className="mt-0.5 text-xs text-ink-subtle">
+          {`${product.variants.length} option${product.variants.length === 1 ? "" : "s"}`}
+        </p>
+      ) : null}
       <p className="mt-0.5 text-sm text-ink" data-numeric>
         {formatGhsCompact(product.price)}
         {shipping > 0 && (

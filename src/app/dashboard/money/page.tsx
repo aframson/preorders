@@ -25,8 +25,7 @@ export default async function MoneyPage() {
     .select(
       "id, title, batches(id, number, orders(id, status, freight_amount, freight_paid_at, code, customers(name)))",
     )
-    .eq("vendor_id", vendor.id)
-    .is("archived_at", null);
+    .eq("vendor_id", vendor.id);
 
   const outstanding = (drops ?? []).flatMap((drop) =>
     (drop.batches ?? []).flatMap((batch) =>
@@ -57,7 +56,10 @@ export default async function MoneyPage() {
         description="What customers paid, what you keep, and when Paystack pays you out. There is no wallet inside Preorders."
       />
 
-      <section className="space-y-3 rounded-card border border-border bg-surface p-5">
+      <section
+        id="how-payouts-work"
+        className="scroll-mt-8 space-y-3 rounded-card border border-border bg-surface p-5 shadow-sm"
+      >
         <h2 className="font-display text-base font-semibold text-ink">
           How you get paid
         </h2>
@@ -82,10 +84,10 @@ export default async function MoneyPage() {
         </ul>
         <p className="text-sm">
           <Link
-            href="/dashboard/earnings"
+            href="/dashboard/money#how-payouts-work"
             className="font-medium text-brand-700 underline-offset-2 hover:underline"
           >
-            More detail on earnings →
+            Payment and payout details
           </Link>
         </p>
       </section>
@@ -110,12 +112,12 @@ export default async function MoneyPage() {
             hint="All successful charges"
             value={formatGhs(money.inbound)}
           />
-          <Stat
+          {/* <Stat
             label={`Our fee (${PLATFORM_FEE_PERCENT.goods}%)`}
             hint="Kept on Paystack"
             value={formatGhs(money.outbound)}
             tone="out"
-          />
+          /> */}
           <Stat
             label="Your share"
             hint="What settles to you"

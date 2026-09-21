@@ -42,7 +42,7 @@ export default async function VendorFindOrdersPage({
             <ChevronLeft className="size-4" aria-hidden />
             Back to shop
           </Link>
-          <h1 className="mt-3 font-display text-2xl font-bold tracking-tight text-ink">
+          <h1 className="mt-3 font-display text-2xl font-semibold tracking-tight text-ink">
             My orders
           </h1>
           <p className="mt-1 text-sm text-ink-muted">

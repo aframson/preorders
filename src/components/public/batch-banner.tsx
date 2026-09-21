@@ -34,16 +34,12 @@ export function BatchBanner({
     return (
       <section
         className={cn(
-          "relative overflow-hidden border-y px-5 py-4",
+          "border-y px-5 py-4",
           edge,
           TONE_CLASSES[tone],
         )}
       >
-        <span
-          aria-hidden
-          className="bg-grain-heavy pointer-events-none absolute inset-0 mix-blend-multiply opacity-50 dark:mix-blend-overlay dark:opacity-45"
-        />
-        <div className="relative mx-auto flex max-w-3xl flex-wrap items-center justify-between gap-x-4 gap-y-1">
+        <div className="mx-auto flex max-w-3xl flex-wrap items-center justify-between gap-x-4 gap-y-1">
           <p className="font-display text-base font-semibold">
             Batch {openBatch.number} is open
           </p>

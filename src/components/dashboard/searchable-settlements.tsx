@@ -115,9 +115,9 @@ function SettlementRow({
             </dd>
           </div>
           <div className="rounded-control bg-surface-muted px-3 py-2">
-            <dt className="text-ink-subtle">
+            {/* <dt className="text-ink-subtle">
               Our fee{isGoods ? ` (${PLATFORM_FEE_PERCENT.goods}%)` : ""}
-            </dt>
+            </dt> */}
             <dd className="mt-0.5 font-medium text-closing" data-numeric>
               {formatGhs(row.platformFee)}
             </dd>

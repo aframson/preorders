@@ -23,7 +23,7 @@ export function LoginForm({ next }: { next: string }) {
 
   return (
     <div className="w-full max-w-md">
-      <h1 className="font-display text-2xl font-bold tracking-tight">
+      <h1 className="font-display text-2xl font-semibold tracking-tight">
         {verifying ? "Enter your code" : "Sign in"}
       </h1>
       <p className="mt-2 text-sm leading-relaxed text-ink-muted">
