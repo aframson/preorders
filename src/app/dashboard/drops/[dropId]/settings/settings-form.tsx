@@ -6,7 +6,9 @@ import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
-import { Field, Input, Select, Textarea } from "@/components/ui/field";
+import { useConfirmDialog } from "@/components/ui/confirm-dialog";
+import { Field, FormError, Input, Select, Textarea } from "@/components/ui/field";
+import { useSuccessToast } from "@/lib/use-success-toast";
 import {
   createCategory,
   deleteCategory,
@@ -37,11 +39,18 @@ export function DropSettingsForm({
     FormData
   >(createCategory, {});
   const [deleting, startDelete] = useTransition();
+  const { confirm, dialog } = useConfirmDialog();
+  useSuccessToast(state);
+  useSuccessToast(categoryState);
 
-  function onDelete() {
-    const ok = confirm(
-      `Delete “${drop.title}”?\n\nThe public link is removed and open batches stop taking orders. Past orders stay in your records.`,
-    );
+  async function onDelete() {
+    const ok = await confirm({
+      title: `Delete "${drop.title}"?`,
+      description:
+        "The public link is removed and open batches stop taking orders. Past orders stay in your records.",
+      confirmLabel: "Delete drop",
+      danger: true,
+    });
     if (!ok) return;
 
     startDelete(async () => {
@@ -52,17 +61,28 @@ export function DropSettingsForm({
 
   return (
     <div className="max-w-2xl space-y-6">
+      {dialog}
       <Card>
         <CardHeader title="Drop details" />
         <CardBody>
           <form action={submit} className="space-y-5">
             <input type="hidden" name="dropId" value={drop.id} />
 
-            <Field label="Drop name" htmlFor="title" error={state.error}>
+            <FormError message={state.error} />
+
+            <Field
+              label="Drop name"
+              htmlFor="title"
+              error={state.fieldErrors?.title}
+            >
               <Input id="title" name="title" required defaultValue={drop.title} />
             </Field>
 
-            <Field label="Description" htmlFor="description">
+            <Field
+              label="Description"
+              htmlFor="description"
+              error={state.fieldErrors?.description}
+            >
               <Textarea
                 id="description"
                 name="description"
@@ -71,7 +91,11 @@ export function DropSettingsForm({
               />
             </Field>
 
-            <Field label="Default shipping mode" htmlFor="defaultFreightMode">
+            <Field
+              label="Default shipping mode"
+              htmlFor="defaultFreightMode"
+              error={state.fieldErrors?.defaultFreightMode}
+            >
               <Select
                 id="defaultFreightMode"
                 name="defaultFreightMode"
@@ -97,16 +121,9 @@ export function DropSettingsForm({
               </span>
             </label>
 
-            <div className="flex items-center gap-3">
-              <Button type="submit" loading={pending}>
-                Save changes
-              </Button>
-              {state.message && (
-                <span role="status" className="text-sm text-open">
-                  {state.message}
-                </span>
-              )}
-            </div>
+            <Button type="submit" loading={pending}>
+              Save changes
+            </Button>
           </form>
         </CardBody>
       </Card>

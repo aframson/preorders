@@ -5,12 +5,17 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 
 import { requireVendor } from "@/lib/auth";
+import { fieldErrorsFromZod } from "@/lib/form-errors";
 import { cancelBatchCutoff } from "@/lib/jobs";
 import { slugify } from "@/lib/site";
 import { createClient } from "@/lib/supabase/server";
 import { requireVendorApproval } from "@/lib/vendor-approval";
 
-export type ActionState = { error?: string | null; message?: string | null };
+export type ActionState = {
+  error?: string | null;
+  message?: string | null;
+  fieldErrors?: Record<string, string>;
+};
 
 // Drops ----------------------------------------------------------------------
 
@@ -32,7 +37,15 @@ export async function createDrop(
     defaultFreightMode: formData.get("defaultFreightMode"),
   });
 
-  if (!parsed.success) return { error: parsed.error.issues[0].message };
+  if (!parsed.success) {
+    return {
+      fieldErrors: fieldErrorsFromZod(parsed.error, [
+        "title",
+        "description",
+        "defaultFreightMode",
+      ] as const),
+    };
+  }
 
   const supabase = await createClient();
   const slug = await uniqueDropSlug(vendor.id, parsed.data.title);
@@ -95,7 +108,15 @@ export async function updateDrop(
     published: formData.get("published") === "on",
   });
 
-  if (!parsed.success) return { error: parsed.error.issues[0].message };
+  if (!parsed.success) {
+    return {
+      fieldErrors: fieldErrorsFromZod(parsed.error, [
+        "title",
+        "description",
+        "defaultFreightMode",
+      ] as const),
+    };
+  }
 
   const supabase = await createClient();
   const { error } = await supabase
@@ -263,7 +284,23 @@ export async function saveProduct(
   }
 
   const parsed = productSchema.safeParse(payload);
-  if (!parsed.success) return { error: parsed.error.issues[0].message };
+  if (!parsed.success) {
+    return {
+      fieldErrors: fieldErrorsFromZod(parsed.error, [
+        "name",
+        "description",
+        "price",
+        "categoryId",
+        "weightGrams",
+        "volumeCm3",
+        "stockLimit",
+        "moq",
+        "availability",
+        "variants",
+        "images",
+      ] as const),
+    };
+  }
 
   const input = parsed.data;
   const supabase = await createClient();

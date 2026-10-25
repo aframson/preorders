@@ -3,17 +3,12 @@
 import { ArrowRight, Search, Store, X } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import {
-  useEffect,
-  useEffectEvent,
-  useId,
-  useState,
-  useTransition,
-} from "react";
+import { useCallback, useEffect, useId, useState, useTransition } from "react";
 import { createPortal } from "react-dom";
 
 import { ListSearch } from "@/components/ui/list-search";
 import { cn } from "@/lib/cn";
+import { useMounted } from "@/lib/use-mounted";
 import type { VendorSearchHit } from "@/lib/vendor-search";
 import { dropPath, vendorPath } from "@/lib/site";
 
@@ -24,16 +19,14 @@ export function VendorSearch({ className }: { className?: string }) {
   const [hits, setHits] = useState<VendorSearchHit[]>([]);
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
-  const [mounted, setMounted] = useState(false);
+  const mounted = useMounted();
   const [, startTransition] = useTransition();
   const titleId = useId();
   const inputId = useId();
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  const close = useEffectEvent(() => {
+  // Stable closures over setters only, so neither needs to go in an effect's
+  // dependency array — safe to call from a click handler or from an effect.
+  const close = useCallback(() => {
     setVisible(false);
     window.setTimeout(() => {
       setOpen(false);
@@ -41,15 +34,15 @@ export function VendorSearch({ className }: { className?: string }) {
       setHits([]);
       setSearched(false);
     }, 220);
-  });
+  }, []);
 
-  const openSearch = useEffectEvent(() => {
+  const openSearch = useCallback(() => {
     setOpen(true);
     // Next frame so CSS can transition from the closed state.
     requestAnimationFrame(() => {
       requestAnimationFrame(() => setVisible(true));
     });
-  });
+  }, []);
 
   useEffect(() => {
     if (!open) return;
@@ -63,19 +56,21 @@ export function VendorSearch({ className }: { className?: string }) {
       document.body.style.overflow = previous;
       window.removeEventListener("keydown", onKey);
     };
-  }, [open]);
+  }, [open, close]);
 
   useEffect(() => {
     if (!open) return;
     const q = query.trim();
     if (q.length < 1) {
-      setHits([]);
-      setSearched(false);
-      setLoading(false);
+      // The empty-query branch already renders ahead of `hits`/`searched` in
+      // the JSX below, so there's nothing to reset here for display purposes.
       return;
     }
 
     const controller = new AbortController();
+    // Flips to loading immediately so the debounce window itself never reads
+    // as "no results" before the request below has even started.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setLoading(true);
     const timer = window.setTimeout(async () => {
       try {

@@ -16,7 +16,15 @@ import {
   type VariantGroupDraft,
 } from "@/components/dashboard/variant-builder";
 import { Button } from "@/components/ui/button";
-import { Field, Input, Label, Select, Textarea } from "@/components/ui/field";
+import { useConfirmDialog } from "@/components/ui/confirm-dialog";
+import {
+  Field,
+  FormError,
+  Input,
+  Label,
+  Select,
+  Textarea,
+} from "@/components/ui/field";
 import { StickyActionBar } from "@/components/ui/sticky-action-bar";
 import { FREIGHT_PRESETS } from "@/lib/freight-presets";
 import {
@@ -60,6 +68,7 @@ export function ProductForm({
     saveProduct,
     {},
   );
+  const { confirm, dialog } = useConfirmDialog();
 
   const [values, setValues] = useState(initial);
   const [groups, setGroups] = useState<VariantGroupDraft[]>(() =>
@@ -98,9 +107,23 @@ export function ProductForm({
     images: values.images,
   };
 
+  const fieldErrorCount = Object.keys(state.fieldErrors ?? {}).length;
+
   return (
     <form action={submit} className="pb-4">
       <input type="hidden" name="payload" value={JSON.stringify(payload)} />
+      {dialog}
+
+      {(state.error || fieldErrorCount > 0) && (
+        <div className="mb-6 max-w-2xl">
+          <FormError
+            message={
+              state.error ??
+              `Check the highlighted field${fieldErrorCount === 1 ? "" : "s"} below.`
+            }
+          />
+        </div>
+      )}
 
       <div className="grid max-w-5xl gap-8 lg:grid-cols-[10rem_minmax(0,1fr)]">
         <aside className="hidden lg:block">
@@ -135,10 +158,15 @@ export function ProductForm({
             value={values.images}
             onChange={(images) => set("images", images)}
           />
+          {state.fieldErrors?.images && (
+            <p role="alert" className="text-xs text-danger">
+              {state.fieldErrors.images}
+            </p>
+          )}
         </section>
 
         <section id="basics" className="scroll-mt-8 space-y-5">
-          <Field label="Product name" htmlFor="name" error={state.error}>
+          <Field label="Product name" htmlFor="name" error={state.fieldErrors?.name}>
             <Input
               id="name"
               required
@@ -152,6 +180,7 @@ export function ProductForm({
             label="Price"
             htmlFor="price"
             hint="What the customer pays for the goods. Shipping is charged separately."
+            error={state.fieldErrors?.price}
           >
             <div className="flex items-center overflow-hidden rounded-control border border-border bg-surface focus-within:border-brand-500">
               <span className="shrink-0 border-r border-border bg-surface-muted px-3.5 py-4 text-sm text-ink-muted sm:py-3">
@@ -175,7 +204,11 @@ export function ProductForm({
           </Field>
 
           {categories.length > 0 && (
-            <Field label="Category" htmlFor="categoryId">
+            <Field
+              label="Category"
+              htmlFor="categoryId"
+              error={state.fieldErrors?.categoryId}
+            >
               <Select
                 id="categoryId"
                 value={values.categoryId ?? ""}
@@ -193,7 +226,11 @@ export function ProductForm({
             </Field>
           )}
 
-          <Field label="Description" htmlFor="description">
+          <Field
+            label="Description"
+            htmlFor="description"
+            error={state.fieldErrors?.description}
+          >
             <Textarea
               id="description"
               rows={3}
@@ -208,6 +245,11 @@ export function ProductForm({
             <p className="text-sm text-ink-muted">
               Shown as a small tag on the product photo.
             </p>
+            {state.fieldErrors?.availability && (
+              <p role="alert" className="text-xs text-danger">
+                {state.fieldErrors.availability}
+              </p>
+            )}
             <div className="grid gap-2 sm:grid-cols-2">
               {(
                 Object.keys(PRODUCT_AVAILABILITY) as ProductAvailability[]
@@ -276,7 +318,12 @@ export function ProductForm({
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2">
-            <Field label="Weight" htmlFor="weightGrams" hint="In grams. Used for air freight.">
+            <Field
+              label="Weight"
+              htmlFor="weightGrams"
+              hint="In grams. Used for air freight."
+              error={state.fieldErrors?.weightGrams}
+            >
               <Input
                 id="weightGrams"
                 type="number"
@@ -298,6 +345,7 @@ export function ProductForm({
               label="Volume"
               htmlFor="volumeCm3"
               hint="In cm³ (length × width × height). Used for sea freight."
+              error={state.fieldErrors?.volumeCm3}
             >
               <Input
                 id="volumeCm3"
@@ -325,6 +373,11 @@ export function ProductForm({
               Size, colour and similar choices. Upload photos first if you want
               each colour to show its own picture.
             </p>
+            {state.fieldErrors?.variants && (
+              <p role="alert" className="mt-1 text-xs text-danger">
+                {state.fieldErrors.variants}
+              </p>
+            )}
           </div>
           <VariantBuilder
             groups={groups}
@@ -343,6 +396,7 @@ export function ProductForm({
             label="Stock limit"
             htmlFor="stockLimit"
             hint="Leave blank for unlimited."
+            error={state.fieldErrors?.stockLimit}
           >
             <Input
               id="stockLimit"
@@ -364,6 +418,7 @@ export function ProductForm({
             label="Minimum order"
             htmlFor="moq"
             hint="How many a customer must take."
+            error={state.fieldErrors?.moq}
           >
             <Input
               id="moq"
@@ -401,14 +456,15 @@ export function ProductForm({
             type="button"
             variant="ghost"
             className="text-danger hover:bg-danger-tint hover:text-danger"
-            onClick={() => {
-              if (
-                confirm(
-                  "Delete this product? Orders that already include it keep their own copy.",
-                )
-              ) {
-                void deleteProduct(values.id!, dropId);
-              }
+            onClick={async () => {
+              const ok = await confirm({
+                title: "Delete this product?",
+                description:
+                  "Orders that already include it keep their own copy.",
+                confirmLabel: "Delete product",
+                danger: true,
+              });
+              if (ok) void deleteProduct(values.id!, dropId);
             }}
           >
             <Trash2 className="size-4" aria-hidden />

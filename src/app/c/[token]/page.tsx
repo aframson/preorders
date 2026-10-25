@@ -1,24 +1,14 @@
+import { ArrowRight, Package } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowRight, Package } from "lucide-react";
 
-import { RememberPortal } from "@/components/public/remember-portal";
+import { CustomerOrderList } from "@/components/public/customer-order-list";
 import { ButtonLink } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
-import { StatusPill } from "@/components/ui/status-pill";
-import { formatGhs, type Pesewas } from "@/lib/money";
-import {
-  getCustomerPortal,
-  portalActionHint,
-  portalIsDone,
-  portalNeedsAction,
-  type PortalOrder,
-} from "@/lib/queries/customer-portal";
-import { orderPath, vendorPath } from "@/lib/site";
-import { ORDER_STATUS, orderStatusLabel } from "@/lib/status";
+import { getCustomerPortal } from "@/lib/queries/customer-portal";
+import { myOrdersPath, vendorPath } from "@/lib/site";
 import { BUCKETS, publicUrl } from "@/lib/storage";
-import { formatAccraDate } from "@/lib/time";
 
 export const metadata = {
   title: "Your orders",
@@ -32,25 +22,13 @@ export default async function CustomerPortalPage({
   const portal = await getCustomerPortal(token);
   if (!portal) notFound();
 
-  const needsAction = portal.orders.filter(portalNeedsAction);
-  const inProgress = portal.orders.filter(
-    (order) => !portalNeedsAction(order) && !portalIsDone(order),
-  );
-  const done = portal.orders.filter(portalIsDone);
   const shopHref = vendorPath(portal.vendor.slug);
 
   return (
     <div className="min-h-dvh bg-canvas">
-      <RememberPortal
-        vendorSlug={portal.vendor.slug}
-        portalToken={portal.portalToken}
-      />
       <header className="border-b border-border bg-surface">
         <div className="mx-auto flex max-w-lg items-center gap-3 px-5 py-4">
-          <Link
-            href={shopHref}
-            className="flex min-w-0 items-center gap-3"
-          >
+          <Link href={shopHref} className="flex min-w-0 items-center gap-3">
             {portal.vendor.logoPath ? (
               <Image
                 src={publicUrl(BUCKETS.vendorAssets, portal.vendor.logoPath)}
@@ -65,9 +43,7 @@ export default async function CustomerPortalPage({
               </span>
             )}
             <div className="min-w-0">
-              <p className="truncate text-sm font-medium text-ink">
-                {portal.vendor.businessName}
-              </p>
+              <p className="truncate text-sm font-medium text-ink">{portal.vendor.businessName}</p>
               <p className="truncate text-xs text-ink-muted">Your orders</p>
             </div>
           </Link>
@@ -80,14 +56,12 @@ export default async function CustomerPortalPage({
             Hi {portal.customerName.split(/\s+/)[0]}
           </h1>
           <p className="text-sm text-ink-muted">
-            Every order you have with {portal.vendor.businessName}
-            {portal.email ? (
-              <>
-                {" "}
-                · <span className="text-ink-subtle">{portal.email}</span>
-              </>
-            ) : null}
-            . Bookmark this page — the same link stays yours.
+            Every order you&apos;ve placed with {portal.vendor.businessName}
+            {portal.email ? ` using ${portal.email}` : ""}.{" "}
+            <Link href={myOrdersPath()} className="font-medium text-ink underline-offset-2 hover:underline">
+              Sign in with your phone
+            </Link>{" "}
+            to see orders from every shop in one place.
           </p>
         </section>
 
@@ -98,34 +72,10 @@ export default async function CustomerPortalPage({
             description="When you place an order, it will show up here."
           />
         ) : (
-          <>
-            {needsAction.length > 0 && (
-              <OrderSection
-                title="Needs your action"
-                hint="Pay to keep your place or release your parcel."
-                orders={needsAction}
-                emphasize
-              />
-            )}
-
-            {inProgress.length > 0 && (
-              <OrderSection
-                title="In progress"
-                orders={inProgress}
-              />
-            )}
-
-            {done.length > 0 && (
-              <OrderSection
-                title="Done"
-                orders={done}
-                muted
-              />
-            )}
-          </>
+          <CustomerOrderList orders={portal.orders} />
         )}
 
-        <section className="space-y-3 border-t border-border pt-6">
+        <section className="border-t border-border pt-6">
           <ButtonLink href={shopHref} variant="secondary" block>
             Shop {portal.vendor.businessName} again
             <ArrowRight className="size-4" aria-hidden />
@@ -134,134 +84,4 @@ export default async function CustomerPortalPage({
       </main>
     </div>
   );
-}
-
-function OrderSection({
-  title,
-  hint,
-  orders,
-  emphasize = false,
-  muted = false,
-}: {
-  title: string;
-  hint?: string;
-  orders: PortalOrder[];
-  emphasize?: boolean;
-  muted?: boolean;
-}) {
-  return (
-    <section className="space-y-3">
-      <div className="space-y-0.5">
-        <h2 className="font-display text-base font-semibold text-ink">
-          {title}
-        </h2>
-        {hint ? <p className="text-sm text-ink-muted">{hint}</p> : null}
-      </div>
-      <ul className="space-y-3">
-        {orders.map((order) => (
-          <li key={order.id}>
-            <OrderRow order={order} emphasize={emphasize} muted={muted} />
-          </li>
-        ))}
-      </ul>
-    </section>
-  );
-}
-
-function OrderRow({
-  order,
-  emphasize,
-  muted,
-}: {
-  order: PortalOrder;
-  emphasize: boolean;
-  muted: boolean;
-}) {
-  const action = portalActionHint(order);
-  const amountDue = actionAmount(order);
-  const href = orderPath(order.publicToken);
-
-  return (
-    <Link
-      href={href}
-      className={
-        emphasize
-          ? "block rounded-card border border-closing/35 bg-closing-tint/40 px-4 py-4 transition-colors hover:border-closing/55"
-          : muted
-            ? "block rounded-card border border-border bg-surface px-4 py-4 opacity-80 transition-opacity hover:opacity-100"
-            : "block rounded-card border border-border bg-surface px-4 py-4 transition-colors hover:border-brand-300"
-      }
-    >
-      <div className="flex items-start gap-3">
-        <div className="relative size-12 shrink-0 overflow-hidden rounded-lg bg-surface-muted">
-          {order.thumbPath ? (
-            <Image
-              src={publicUrl(BUCKETS.productImages, order.thumbPath)}
-              alt=""
-              fill
-              sizes="48px"
-              className="object-cover"
-            />
-          ) : (
-            <span className="flex size-full items-center justify-center text-ink-subtle">
-              <Package className="size-5" aria-hidden />
-            </span>
-          )}
-        </div>
-
-        <div className="min-w-0 flex-1">
-          <div className="flex items-start justify-between gap-3">
-            <div className="min-w-0">
-              <p className="font-medium text-ink" data-numeric>
-                {order.code}
-              </p>
-              <p className="mt-0.5 truncate text-sm text-ink-muted">
-                {order.dropTitle} · Batch {order.batchNumber}
-              </p>
-              <p className="mt-0.5 text-xs text-ink-subtle">
-                {formatAccraDate(order.createdAt)}
-                {order.expectedDeliveryAt && !portalIsDone(order)
-                  ? ` · due ${formatAccraDate(order.expectedDeliveryAt)}`
-                  : null}
-              </p>
-            </div>
-            <div className="flex shrink-0 flex-col items-end gap-2">
-              <StatusPill tone={ORDER_STATUS[order.status].tone}>
-                {orderStatusLabel(order.status, order.fulfilment, "public")}
-              </StatusPill>
-              <p
-                className="font-display text-sm font-semibold text-ink"
-                data-numeric
-              >
-                {formatGhs(
-                  amountDue ??
-                    (order.freightAmount != null
-                      ? order.goodsTotal + order.freightAmount
-                      : order.goodsTotal),
-                )}
-              </p>
-            </div>
-          </div>
-
-          {action ? (
-            <p className="mt-3 inline-flex items-center gap-1.5 text-sm font-semibold text-brand-800">
-              {action}
-              {amountDue != null ? (
-                <span data-numeric>· {formatGhs(amountDue)}</span>
-              ) : null}
-              <ArrowRight className="size-3.5" aria-hidden />
-            </p>
-          ) : null}
-        </div>
-      </div>
-    </Link>
-  );
-}
-
-function actionAmount(order: PortalOrder): Pesewas | null {
-  if (order.status === "pending_payment") return order.goodsTotal;
-  if (order.status === "awaiting_freight" && order.freightAmount != null) {
-    return order.freightAmount;
-  }
-  return null;
 }

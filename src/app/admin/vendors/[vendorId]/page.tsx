@@ -11,7 +11,9 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { ApprovalActions } from "@/app/admin/vendors/[vendorId]/approval-actions";
+import { ResetPayoutButton } from "@/app/admin/vendors/[vendorId]/reset-payout-button";
 import { StatusBadge } from "@/app/admin/vendors/vendor-list";
+import { AdminMetric } from "@/components/admin/admin-metric";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { formatGhs } from "@/lib/money";
 import {
@@ -78,27 +80,41 @@ export default async function AdminVendorPage({
               Registered {formatDate(vendor.createdAt)}
             </p>
           </div>
-          <Link
-            href={`/${vendor.slug}`}
-            target="_blank"
-            className="inline-flex h-10 items-center gap-2 rounded-control border border-border bg-surface px-3 text-sm font-medium text-ink hover:bg-surface-muted"
-          >
-            Open shop
-            <ExternalLink className="size-4" aria-hidden />
-          </Link>
+          <div className="flex flex-wrap gap-2">
+            <Link
+              href={`/admin/orders?vendor=${vendor.id}`}
+              className="inline-flex h-10 items-center rounded-control border border-border bg-surface px-3 text-sm font-medium text-ink hover:bg-surface-muted"
+            >
+              Orders
+            </Link>
+            <Link
+              href={`/admin/payments?vendor=${vendor.id}`}
+              className="inline-flex h-10 items-center rounded-control border border-border bg-surface px-3 text-sm font-medium text-ink hover:bg-surface-muted"
+            >
+              Payments
+            </Link>
+            <Link
+              href={`/${vendor.slug}`}
+              target="_blank"
+              className="inline-flex h-10 items-center gap-2 rounded-control border border-border bg-surface px-3 text-sm font-medium text-ink hover:bg-surface-muted"
+            >
+              Open shop
+              <ExternalLink className="size-4" aria-hidden />
+            </Link>
+          </div>
         </div>
       </header>
 
       <section className="grid grid-cols-2 gap-3 lg:grid-cols-5">
-        <Metric icon={Boxes} label="Drops" value={vendor.metrics.drops} />
-        <Metric icon={Package} label="Products" value={vendor.metrics.products} />
-        <Metric icon={Users} label="Customers" value={vendor.metrics.customers} />
-        <Metric icon={ShoppingBag} label="Paid orders" value={vendor.metrics.orders} />
-        <Metric
+        <AdminMetric icon={Boxes} label="Drops" value={vendor.metrics.drops} />
+        <AdminMetric icon={Package} label="Products" value={vendor.metrics.products} />
+        <AdminMetric icon={Users} label="Customers" value={vendor.metrics.customers} />
+        <AdminMetric icon={ShoppingBag} label="Paid orders" value={vendor.metrics.orders} />
+        <AdminMetric
           icon={WalletCards}
           label="Goods value"
           value={formatGhs(vendor.metrics.paidOrderValue)}
-          wide
+          className="col-span-2 lg:col-span-1"
         />
       </section>
 
@@ -150,6 +166,17 @@ export default async function AdminVendorPage({
                 ],
               ]}
             />
+            {vendor.paystackSubaccountCode ? (
+              <div className="mt-4 border-t border-border pt-4">
+                <ResetPayoutButton vendorId={vendor.id} />
+                <p className="mt-2 text-xs text-ink-muted">
+                  Use this if the subaccount code above doesn&apos;t actually
+                  resolve on Paystack (checkout fails with &quot;invalid
+                  subaccount&quot;) — clears the link so the vendor can
+                  reconnect and get a fresh one.
+                </p>
+              </div>
+            ) : null}
           </CardBody>
         </Card>
       </div>
@@ -177,30 +204,6 @@ export default async function AdminVendorPage({
           />
         </CardBody>
       </Card>
-    </div>
-  );
-}
-
-function Metric({
-  icon: Icon,
-  label,
-  value,
-  wide = false,
-}: {
-  icon: typeof Boxes;
-  label: string;
-  value: string | number;
-  wide?: boolean;
-}) {
-  return (
-    <div
-      className={`rounded-card border border-border bg-surface p-4 ${wide ? "col-span-2 lg:col-span-1" : ""}`}
-    >
-      <Icon className="size-4 text-ink-muted" aria-hidden />
-      <p className="mt-3 text-xs text-ink-muted">{label}</p>
-      <p className="mt-0.5 truncate font-display text-lg font-semibold text-ink">
-        {value}
-      </p>
     </div>
   );
 }

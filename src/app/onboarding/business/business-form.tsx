@@ -5,7 +5,7 @@ import { useActionState, useEffect, useState } from "react";
 
 import { StepShell } from "@/components/onboarding/step-shell";
 import { Button } from "@/components/ui/button";
-import { Field, Input } from "@/components/ui/field";
+import { Field, FormError, Input } from "@/components/ui/field";
 import { cn } from "@/lib/cn";
 import { slugify } from "@/lib/site";
 import {
@@ -33,7 +33,7 @@ export function BusinessForm({
   // the link is what goes in their WhatsApp bio and they may have a preference.
   const [slugTouched, setSlugTouched] = useState(Boolean(defaultSlug));
   const [slug, setSlug] = useState(defaultSlug);
-  const [slugCheck, setSlugCheck] = useState<SlugCheckResult>({
+  const [rawSlugCheck, setSlugCheck] = useState<SlugCheckResult>({
     status: "idle",
     message: "",
   });
@@ -42,12 +42,12 @@ export function BusinessForm({
 
   useEffect(() => {
     const value = effectiveSlug.trim();
-    if (!value) {
-      setSlugCheck({ status: "idle", message: "" });
-      return;
-    }
+    if (!value) return;
 
     let cancelled = false;
+    // Flips to "checking" immediately so typing never shows a stale verdict
+    // while the debounced request below is in flight.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setSlugCheck({ status: "checking", message: "Checking…" });
 
     const timer = window.setTimeout(async () => {
@@ -60,6 +60,12 @@ export function BusinessForm({
       window.clearTimeout(timer);
     };
   }, [effectiveSlug]);
+
+  // Nothing to check for an empty slug — show idle immediately rather than
+  // resetting it from inside the effect above.
+  const slugCheck: SlugCheckResult = effectiveSlug.trim()
+    ? rawSlugCheck
+    : { status: "idle", message: "" };
 
   const slugBlocked =
     slugCheck.status === "taken" ||
@@ -82,10 +88,12 @@ export function BusinessForm({
       description="This is what customers see at the top of your link. Next you’ll connect payouts, then create your first drop — the shop page where batches of orders run."
     >
       <form action={submit} className="space-y-6">
+        <FormError message={state.error} />
+
         <Field
           label="Business name"
           htmlFor="businessName"
-          error={state.error}
+          error={state.fieldErrors?.businessName}
         >
           <Input
             id="businessName"
@@ -106,7 +114,7 @@ export function BusinessForm({
           error={
             slugTone === "bad" && slugCheck.message
               ? slugCheck.message
-              : undefined
+              : state.fieldErrors?.slug
           }
         >
           <div
@@ -167,6 +175,7 @@ export function BusinessForm({
           label="WhatsApp number"
           htmlFor="whatsappNumber"
           hint="Customers tap through to this number with questions."
+          error={state.fieldErrors?.whatsappNumber}
         >
           <Input
             id="whatsappNumber"

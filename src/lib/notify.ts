@@ -233,6 +233,27 @@ export async function notifyFreightDue(batchId: string): Promise<void> {
 }
 
 /**
+ * This order's share of the freight bill rounded to nothing (a zero-weight
+ * item, say) — settled automatically rather than left waiting on a payment
+ * that can never happen. "Shipping payment received" would be the wrong
+ * thing to tell someone who never paid anything, hence its own wording.
+ */
+export async function notifyFreightWaived(orderId: string): Promise<void> {
+  const ctx = await loadOrderMailContext(orderId);
+  if (!ctx) return;
+
+  await emailOrderUpdate(ctx, {
+    subject: `${ctx.vendorName}: nothing owed on shipping for ${ctx.orderCode}`,
+    headline: "Good news — you don't owe anything on shipping.",
+    body:
+      ctx.fulfilment === "delivery"
+        ? "Your share came to nothing this time. Your order is ready to be delivered — we will email you when it is marked delivered."
+        : "Your share came to nothing this time. Your order is ready for pickup — we will email you when it is marked picked up.",
+    ctaLabel: "Open your order",
+  });
+}
+
+/**
  * Vendor posted a timeline update or moved batch status.
  * Emails every paid customer on the batch with the update + their order link.
  */

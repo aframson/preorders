@@ -1,7 +1,7 @@
 "use client";
 
 import { Bell, BellOff, Loader2, Smartphone } from "lucide-react";
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useState, useSyncExternalStore, useTransition } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -11,6 +11,10 @@ import {
 } from "@/app/dashboard/more/push-actions";
 
 type PermissionState = NotificationPermission | "unsupported";
+
+function subscribeNever() {
+  return () => {};
+}
 
 function urlBase64ToUint8Array(base64String: string): Uint8Array {
   const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
@@ -62,20 +66,20 @@ export function PushEnableCard({
   const [pending, startTransition] = useTransition();
   const [subscribed, setSubscribed] = useState(false);
   const [permission, setPermission] = useState<PermissionState>("default");
-  const [standalone, setStandalone] = useState(false);
-  const [ios, setIos] = useState(false);
   const [ready, setReady] = useState(false);
   const apiReady = Boolean(vapidPublicKey);
   const browserReady = pushSupported();
-  const supported = browserReady && apiReady;
+  const standalone = useSyncExternalStore(subscribeNever, isStandaloneDisplay, () => false);
+  const ios = useSyncExternalStore(subscribeNever, isIos, () => false);
 
   useEffect(() => {
-    setIos(isIos());
-    setStandalone(isStandaloneDisplay());
-
     if (!browserReady || !apiReady) {
+      // Nothing async to wait for in this branch — report the final state
+      // directly instead of leaving `ready` stuck false.
+      /* eslint-disable react-hooks/set-state-in-effect */
       setPermission(browserReady ? Notification.permission : "unsupported");
       setReady(true);
+      /* eslint-enable react-hooks/set-state-in-effect */
       return;
     }
 

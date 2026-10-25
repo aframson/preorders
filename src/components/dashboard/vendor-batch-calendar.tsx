@@ -6,7 +6,7 @@ import { useMemo, useState } from "react";
 
 import { cn } from "@/lib/cn";
 import type { DashboardBatch } from "@/lib/queries/dashboard";
-import { BATCH_STATUS, type BatchStatus } from "@/lib/status";
+import { BATCH_STATUS, hasScheduledStart, type BatchStatus } from "@/lib/status";
 import {
   accraWeekdayMondayFirst,
   daysInAccraMonth,
@@ -324,7 +324,9 @@ export function VendorBatchCalendar({
                         {BATCH_STATUS[batch.status].label}
                         {" · "}
                         {batch.status === "scheduled"
-                          ? `Opens ${formatAccraDateTime(batch.opensAt)}`
+                          ? hasScheduledStart(batch)
+                            ? `Opens ${formatAccraDateTime(batch.opensAt)}`
+                            : "Not open yet"
                           : batch.status === "open"
                             ? `Closes ${formatAccraDateTime(batch.closesAt)}`
                             : batch.status === "settled"

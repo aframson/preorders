@@ -1,7 +1,8 @@
-import { ArrowLeft, LogOut, Store } from "lucide-react";
+import { ArrowLeft, LogOut } from "lucide-react";
 import Link from "next/link";
 
 import { signOut } from "@/app/(auth)/login/actions";
+import { AdminNav } from "@/components/admin/admin-nav";
 import { Logo } from "@/components/brand/logo";
 import { Button } from "@/components/ui/button";
 import { requireAdmin } from "@/lib/admin-auth";
@@ -24,23 +25,13 @@ export default async function AdminLayout({
             </span>
           </div>
 
-          <nav aria-label="Admin" className="hidden lg:block">
-            <Link
-              href="/admin/vendors"
-              className="flex items-center gap-3 rounded-control bg-surface px-3 py-2 text-sm font-medium text-ink shadow-sm"
-            >
-              <Store className="size-4" aria-hidden />
-              Vendors
-            </Link>
-          </nav>
+          <div className="hidden lg:block">
+            <AdminNav variant="sidebar" />
+          </div>
+        </div>
 
-          <Link
-            href="/admin/vendors"
-            className="inline-flex items-center gap-2 text-sm font-medium text-ink lg:hidden"
-          >
-            <Store className="size-4" aria-hidden />
-            Vendors
-          </Link>
+        <div className="px-5 lg:hidden">
+          <AdminNav variant="bar" />
         </div>
 
         <div className="hidden border-t border-border p-3 lg:absolute lg:right-3 lg:bottom-3 lg:left-3 lg:block">

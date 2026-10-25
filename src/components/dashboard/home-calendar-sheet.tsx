@@ -9,6 +9,7 @@ import {
   type VendorCalendarBatch,
 } from "@/components/dashboard/vendor-batch-calendar";
 import { cn } from "@/lib/cn";
+import { useMounted } from "@/lib/use-mounted";
 
 /**
  * Mobile-only: calendar icon opens a bottom sheet with the full batch calendar.
@@ -20,10 +21,8 @@ export function HomeCalendarSheet({
   batches: VendorCalendarBatch[];
 }) {
   const [open, setOpen] = useState(false);
-  const [mounted, setMounted] = useState(false);
+  const mounted = useMounted();
   const titleId = useId();
-
-  useEffect(() => setMounted(true), []);
 
   useEffect(() => {
     if (!open) return;

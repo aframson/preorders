@@ -91,3 +91,33 @@ export function mapsEmbedSrc(raw: string): string | null {
 
 export const MAPS_LINK_HINT =
   "Open Google Maps, drop a pin, then Share → Copy link and paste it here";
+
+/**
+ * A delivery note is free text that may also carry a Google Maps pin —
+ * either appended by `DeliveryAddressField` ("Use my location"), or, from
+ * before a written address was accepted, be nothing but a bare Maps link.
+ * Splits the two apart so each renders correctly: the address as plain text,
+ * the pin as a map preview and an "Open in Google Maps" link.
+ */
+export function splitDeliveryNote(note: string): {
+  address: string;
+  mapsUrl: string | null;
+} {
+  const trimmed = note.trim();
+  if (!trimmed) return { address: "", mapsUrl: null };
+
+  if (isGoogleMapsUrl(trimmed)) {
+    return { address: "", mapsUrl: trimmed };
+  }
+
+  const urlMatch = trimmed.match(/https?:\/\/\S+/);
+  if (urlMatch && isGoogleMapsUrl(urlMatch[0])) {
+    const address = trimmed
+      .slice(0, urlMatch.index)
+      .replace(/map pin:\s*$/i, "")
+      .trim();
+    return { address, mapsUrl: urlMatch[0] };
+  }
+
+  return { address: trimmed, mapsUrl: null };
+}

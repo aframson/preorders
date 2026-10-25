@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useTransition } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
+import { useConfirmDialog, type ConfirmOptions } from "@/components/ui/confirm-dialog";
 import type { BatchStatus } from "@/lib/status";
 import { openBatch, setBatchStatus } from "../actions";
 
@@ -14,13 +15,20 @@ import { openBatch, setBatchStatus } from "../actions";
  * a bill in front of every customer at once.
  */
 const NEXT_STEP: Partial<
-  Record<BatchStatus, { status: BatchStatus; label: string; confirm?: string }>
+  Record<
+    BatchStatus,
+    { status: BatchStatus; label: string; confirm?: Omit<ConfirmOptions, "danger"> }
+  >
 > = {
   open: {
     status: "closed",
     label: "Close batch now",
-    confirm:
-      "Close this batch now? Customers will no longer be able to order, and unpaid orders are released.",
+    confirm: {
+      title: "Close this batch now?",
+      description:
+        "Customers will no longer be able to order, and unpaid orders are released.",
+      confirmLabel: "Close batch",
+    },
   },
   closed: { status: "purchasing", label: "Mark as buying from supplier" },
   purchasing: { status: "in_transit", label: "Mark as shipped" },
@@ -28,14 +36,20 @@ const NEXT_STEP: Partial<
   freight_invoiced: {
     status: "settled",
     label: "Mark batch complete",
-    confirm:
-      "Mark this batch complete? Use this when every customer has paid shipping.",
+    confirm: {
+      title: "Mark this batch complete?",
+      description: "Use this when every customer has paid shipping.",
+      confirmLabel: "Mark complete",
+    },
   },
   arrived: {
     status: "settled",
     label: "Mark batch complete",
-    confirm:
-      "Mark this batch complete? Use this when every customer has paid shipping.",
+    confirm: {
+      title: "Mark this batch complete?",
+      description: "Use this when every customer has paid shipping.",
+      confirmLabel: "Mark complete",
+    },
   },
 };
 
@@ -52,14 +66,12 @@ export function StatusControl({
   canSettle?: boolean;
 }) {
   const [pending, startTransition] = useTransition();
-  const [error, setError] = useState<string | null>(null);
+  const { confirm, dialog } = useConfirmDialog();
 
   function run(action: () => Promise<{ error?: string | null; message?: string | null }>) {
-    setError(null);
     startTransition(async () => {
       const result = await action();
       if (result.error) {
-        setError(result.error);
         toast.error(result.error);
       } else if (result.message) {
         toast.success(result.message);
@@ -76,11 +88,7 @@ export function StatusControl({
         >
           Open for orders
         </Button>
-        {error && (
-          <p role="alert" className="max-w-sm text-sm text-danger">
-            {error}
-          </p>
-        )}
+        {dialog}
       </div>
     );
   }
@@ -95,18 +103,20 @@ export function StatusControl({
       <Button
         variant="secondary"
         loading={pending}
-        onClick={() => {
-          if (next.confirm && !confirm(next.confirm)) return;
+        onClick={async () => {
+          if (next.confirm) {
+            const ok = await confirm({
+              ...next.confirm,
+              danger: next.status === "closed",
+            });
+            if (!ok) return;
+          }
           run(() => setBatchStatus(batchId, dropId, next.status));
         }}
       >
         {next.label}
       </Button>
-      {error && (
-        <p role="alert" className="max-w-sm text-sm text-danger">
-          {error}
-        </p>
-      )}
+      {dialog}
     </div>
   );
 }

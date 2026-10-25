@@ -42,6 +42,7 @@ export default async function NewBatchPage({
         submitLabel="Schedule batch"
         initial={{
           freightMode: drop.default_freight_mode as FreightMode,
+          opensAt: "",
           closesAt: toAccraInputValue(defaultCutoff(14)),
           expectedDeliveryAt: "",
           freightRateEstimate: previous?.freight_rate_estimate ?? 0,

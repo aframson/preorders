@@ -4,6 +4,7 @@ import { MoreHorizontal, Trash2 } from "lucide-react";
 import { useTransition } from "react";
 import { toast } from "sonner";
 
+import { useConfirmDialog } from "@/components/ui/confirm-dialog";
 import { deleteDrop } from "./actions";
 
 export function DeleteDropButton({
@@ -14,6 +15,7 @@ export function DeleteDropButton({
   title: string;
 }) {
   const [pending, start] = useTransition();
+  const { confirm, dialog } = useConfirmDialog();
 
   return (
     <details className="group relative">
@@ -28,11 +30,15 @@ export function DeleteDropButton({
           type="button"
           disabled={pending}
           className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm text-danger transition-colors hover:bg-danger-tint disabled:opacity-50"
-          onClick={(event) => {
+          onClick={async (event) => {
             event.preventDefault();
-            const ok = confirm(
-              `Delete “${title}”?\n\nThe public link is removed and open batches stop taking orders.`,
-            );
+            const ok = await confirm({
+              title: `Delete "${title}"?`,
+              description:
+                "The public link is removed and open batches stop taking orders.",
+              confirmLabel: "Delete drop",
+              danger: true,
+            });
             if (!ok) return;
             start(async () => {
               const result = await deleteDrop(dropId);
@@ -44,6 +50,7 @@ export function DeleteDropButton({
           Delete drop
         </button>
       </div>
+      {dialog}
     </details>
   );
 }

@@ -3,7 +3,7 @@
 import { redirect } from "next/navigation";
 import { z } from "zod";
 
-import { isGoogleMapsUrl } from "@/lib/maps-link";
+import { rememberOrderOnDevice } from "@/lib/device-orders.server";
 import { CheckoutError, createOrder } from "@/lib/orders";
 import {
   PaymentUnavailableError,
@@ -46,20 +46,19 @@ const checkoutSchema = z
   .superRefine((data, ctx) => {
     if (data.fulfilment !== "delivery") return;
 
-    if (!data.deliveryNote) {
+    // A bare minimum against one-word throwaway answers ("n/a", "asdf") —
+    // not real address validation, since Ghanaian addresses are usually
+    // landmark-based rather than a formal postal format this could check
+    // structurally. The old flow required a verified Google Maps link
+    // instead, which guaranteed a pin but forced a round trip to the Maps
+    // app; this trades that guarantee for something that never leaves the
+    // page, so the floor has to at least rule out non-answers.
+    if (!data.deliveryNote || data.deliveryNote.trim().length < 8) {
       ctx.addIssue({
         code: "custom",
         path: ["deliveryNote"],
-        message: "Paste a Google Maps link for where it should go",
-      });
-      return;
-    }
-
-    if (!isGoogleMapsUrl(data.deliveryNote)) {
-      ctx.addIssue({
-        code: "custom",
-        path: ["deliveryNote"],
-        message: "Use a Google Maps link (Share → Copy link)",
+        message:
+          "Add a bit more detail — a house number, street, or landmark the vendor can find you by",
       });
     }
   });
@@ -140,6 +139,8 @@ export async function placeOrder(
       deliveryNote: input.deliveryNote,
       lines: input.lines,
     });
+
+    await rememberOrderOnDevice(order.publicToken);
 
     const { notifyOrderPlaced } = await import("@/lib/notify");
     void notifyOrderPlaced(order.id).catch((error) =>

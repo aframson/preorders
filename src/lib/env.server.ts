@@ -39,6 +39,10 @@ const serverEnvSchema = z.object({
   PAYSTACK_SECRET_KEY: z.string().optional(),
   /** @deprecated Prefer mode-specific webhook secrets */
   PAYSTACK_WEBHOOK_SECRET: z.string().optional(),
+  /** Arkesel (sms.arkesel.com) key for customer sign-in codes. */
+  ARKESEL_API_KEY: z.string().trim().optional(),
+  /** Name shown as the SMS sender. Arkesel caps it at 11 characters and must approve it. */
+  SMS_SENDER_ID: z.string().trim().max(11).default("Preorders"),
 });
 
 export type ServerEnv = z.infer<typeof serverEnvSchema>;
@@ -60,6 +64,8 @@ export function getServerEnv(): ServerEnv {
     PAYSTACK_LIVE_WEBHOOK_SECRET: process.env.PAYSTACK_LIVE_WEBHOOK_SECRET,
     PAYSTACK_SECRET_KEY: process.env.PAYSTACK_SECRET_KEY,
     PAYSTACK_WEBHOOK_SECRET: process.env.PAYSTACK_WEBHOOK_SECRET,
+    ARKESEL_API_KEY: process.env.ARKESEL_API_KEY || undefined,
+    SMS_SENDER_ID: process.env.SMS_SENDER_ID || undefined,
   });
 
   if (!parsed.success) {

@@ -3,8 +3,9 @@ import "server-only";
 import nodemailer from "nodemailer";
 
 /**
- * Transactional mail. Prefer Resend in production; fall back to SMTP
- * (local Mailpit on 54325 when enabled in supabase/config.toml).
+ * Transactional mail. Prefer Resend when RESEND_API_KEY is set; otherwise
+ * SMTP — a hosted server such as Gmail (EMAIL_SMTP_HOST/PORT/USER/PASS), or
+ * local Mailpit on 54325 when enabled in supabase/config.toml.
  *
  * Missing config is not an error — checkout must never fail because mail is down.
  */
@@ -65,11 +66,19 @@ async function sendViaSmtp(input: SendEmailInput): Promise<boolean> {
   if (!host) return false;
 
   const port = Number(process.env.EMAIL_SMTP_PORT ?? "54325");
+  const user = process.env.EMAIL_SMTP_USER?.trim();
+  const pass = process.env.EMAIL_SMTP_PASS?.trim();
   const transporter = nodemailer.createTransport({
     host,
     port,
-    secure: false,
-    tls: { rejectUnauthorized: false },
+    // 465 is implicit TLS (Gmail and most hosted providers); other ports
+    // upgrade with STARTTLS when the server offers it.
+    secure: port === 465,
+    // A hosted server (e.g. smtp.gmail.com + an app password) needs a login
+    // and a verified certificate; local Mailpit needs neither.
+    ...(user && pass
+      ? { auth: { user, pass } }
+      : { tls: { rejectUnauthorized: false } }),
   });
 
   try {
@@ -109,6 +118,10 @@ export async function sendEmail(input: SendEmailInput): Promise<boolean> {
 
   if (process.env.NODE_ENV === "development") {
     console.info("[email:dev]", input.subject, "→", to, "\n", input.text);
+    // Matches sendSms's dev behavior: logging it locally stands in for
+    // actually sending it, so flows that branch on success (sign-in codes)
+    // aren't blocked by a missing RESEND_API_KEY in local dev.
+    return true;
   }
   return false;
 }

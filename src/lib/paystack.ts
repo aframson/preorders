@@ -314,3 +314,52 @@ export async function verifyTransaction(
     raw: data,
   };
 }
+
+// Settlements ------------------------------------------------------------
+
+export type Settlement = {
+  id: number;
+  /** What actually reached the bank/MoMo account, after fees. */
+  effectiveAmount: Pesewas;
+  totalFees: Pesewas;
+  /** Gross value of the transactions that made up this payout. */
+  totalProcessed: Pesewas;
+  status: "success" | "pending" | "processing" | "failed" | (string & {});
+  settlementDate: string;
+};
+
+/**
+ * The same data Paystack's own dashboard Payouts tab shows, scoped to one
+ * subaccount — this is the only call in this file that answers "did the
+ * money actually land," as opposed to `fetchSubaccount`, which only confirms
+ * the destination exists and is verified.
+ */
+export async function listSettlements(params: {
+  subaccountCode: string;
+  perPage?: number;
+}): Promise<Settlement[]> {
+  const data = await call<
+    {
+      id: number;
+      effective_amount: number;
+      total_fees: number;
+      total_processed: number;
+      status: string;
+      settlement_date: string;
+    }[]
+  >("/settlement", {
+    query: {
+      subaccount: params.subaccountCode,
+      perPage: String(params.perPage ?? 5),
+    },
+  });
+
+  return data.map((row) => ({
+    id: row.id,
+    effectiveAmount: row.effective_amount,
+    totalFees: row.total_fees,
+    totalProcessed: row.total_processed,
+    status: row.status as Settlement["status"],
+    settlementDate: row.settlement_date,
+  }));
+}

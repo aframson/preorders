@@ -19,7 +19,7 @@ import {
   manifestAsText,
   type ManifestLine,
 } from "@/lib/settlement";
-import { BATCH_STATUS, batchTone } from "@/lib/status";
+import { BATCH_STATUS, batchTone, hasScheduledStart } from "@/lib/status";
 import { formatAccraDateTime } from "@/lib/time";
 
 function orderItemSummary(order: BatchOrder): string {
@@ -88,6 +88,7 @@ export function BatchBoard({
   const fee = percentOf(goodsPaid, PLATFORM_FEE_PERCENT.goods);
   const yourShare = goodsPaid - fee;
   const locked = batch.status === "scheduled" || batch.status === "open";
+  const scheduledStart = hasScheduledStart(batch);
   const copyText = manifestAsText(batch, buildManifest(batch));
   const base = `/dashboard/drops/${dropId}/batches/${batch.id}`;
 
@@ -128,10 +129,24 @@ export function BatchBoard({
             </div>
           ) : batch.status === "scheduled" ? (
             <div className="rounded-card bg-surface-muted px-4 py-4">
-              <p className="text-xs text-ink-muted">Opens</p>
-              <p className="mt-1 font-display text-xl font-bold tracking-tight text-ink">
-                {formatAccraDateTime(opensAt)}
-              </p>
+              {scheduledStart ? (
+                <>
+                  <p className="text-xs text-ink-muted">Opens</p>
+                  <p className="mt-1 font-display text-xl font-bold tracking-tight text-ink">
+                    {formatAccraDateTime(opensAt)}
+                  </p>
+                </>
+              ) : (
+                <>
+                  <p className="text-xs text-ink-muted">Batch status</p>
+                  <p className="mt-1 font-display text-xl font-bold tracking-tight text-ink">
+                    Not open yet
+                  </p>
+                  <p className="mt-1 text-xs text-ink-muted">
+                    Open it yourself, or set a start date in Settings.
+                  </p>
+                </>
+              )}
             </div>
           ) : (
             <div className="rounded-card bg-surface-muted px-4 py-4">
@@ -168,7 +183,13 @@ export function BatchBoard({
 
           <ol className="space-y-2.5">
             <BoardStep
-              label={`Batch opened ${formatAccraDateTime(opensAt)}`}
+              label={
+                batch.status === "scheduled"
+                  ? scheduledStart
+                    ? `Opens ${formatAccraDateTime(opensAt)}`
+                    : "Not yet opened"
+                  : `Opened ${formatAccraDateTime(opensAt)}`
+              }
               done={batch.status !== "scheduled"}
               current={batch.status === "scheduled"}
             />

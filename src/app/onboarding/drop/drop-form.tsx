@@ -6,7 +6,7 @@ import { useActionState, useState } from "react";
 import { StepShell } from "@/components/onboarding/step-shell";
 import { Button } from "@/components/ui/button";
 import { CutoffCalendar } from "@/components/ui/cutoff-calendar";
-import { Field, Input } from "@/components/ui/field";
+import { Field, FormError, Input } from "@/components/ui/field";
 import { cn } from "@/lib/cn";
 import { createFirstDrop, type ActionState } from "../actions";
 
@@ -61,6 +61,8 @@ export function DropForm({
       </div>
 
       <form action={submit} className="space-y-6">
+        <FormError message={state.error} />
+
         <Field
           label="Drop name"
           htmlFor="title"
@@ -70,6 +72,7 @@ export function DropForm({
               <span className="text-ink-muted">September China run</span>
             </>
           }
+          error={state.fieldErrors?.title}
         >
           <Input
             id="title"
@@ -84,6 +87,11 @@ export function DropForm({
           <legend className="text-sm font-medium text-ink">
             How are you shipping?
           </legend>
+          {state.fieldErrors?.freightMode && (
+            <p role="alert" className="text-xs text-danger">
+              {state.fieldErrors.freightMode}
+            </p>
+          )}
           <div className="grid gap-2">
             {MODES.map((option) => (
               <label
@@ -127,7 +135,7 @@ export function DropForm({
           label="When does Batch 1 close?"
           htmlFor="closesAt"
           hint="At this time we close Batch 1 and open Batch 2 automatically with the same products."
-          error={state.error}
+          error={state.fieldErrors?.closesAt}
         >
           <CutoffCalendar
             id="closesAt"

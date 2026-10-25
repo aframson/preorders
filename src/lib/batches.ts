@@ -1,8 +1,22 @@
 import "server-only";
 
-import { scheduleBatchCutoff } from "@/lib/jobs";
+import { cancelBatchOpen, scheduleBatchCutoff } from "@/lib/jobs";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isVendorApprovedForSelling } from "@/lib/vendor-approval";
+
+/**
+ * True when a batch has a real future start date on file, not just the
+ * creation-time default — i.e. a vendor deliberately scheduled it. Judges
+ * this from `opens_at` alone (same rule as the vendor-facing
+ * `hasScheduledStart` in src/lib/status.ts) rather than requiring
+ * `open_run_id`: that id is only set when Trigger.dev is configured and the
+ * schedule call actually succeeds, so requiring it here would force-open a
+ * batch early whenever that job silently failed to schedule, even though the
+ * dashboard still correctly shows it as scheduled for the future.
+ */
+function hasFutureStart(batch: { opens_at: string }, now: Date): boolean {
+  return new Date(batch.opens_at).getTime() > now.getTime();
+}
 
 type ClosedBatch = {
   id: string;
@@ -58,7 +72,7 @@ export async function openSuccessorBatch(
 
   const { data: scheduled } = await admin
     .from("batches")
-    .select("id, closes_at")
+    .select("id, closes_at, opens_at, open_run_id")
     .eq("drop_id", closed.drop_id)
     .eq("status", "scheduled")
     .order("number", { ascending: true })
@@ -66,9 +80,16 @@ export async function openSuccessorBatch(
     .maybeSingle();
 
   if (scheduled) {
+    // The vendor deliberately gave this one its own start date — respect it
+    // rather than forcing it open early just because the prior batch closed.
+    if (hasFutureStart(scheduled, now)) {
+      return { skipped: true, reason: "future_start_scheduled" };
+    }
+
+    await cancelBatchOpen(scheduled.open_run_id);
     await admin
       .from("batches")
-      .update({ status: "open", opens_at: nowIso })
+      .update({ status: "open", opens_at: nowIso, open_run_id: null })
       .eq("id", scheduled.id);
 
     const runId = await scheduleBatchCutoff(
@@ -94,16 +115,21 @@ export async function openSuccessorBatch(
   // Idempotent across Trigger retries: never invent Batch N+1 twice.
   const { data: existingNext } = await admin
     .from("batches")
-    .select("id, status, closes_at")
+    .select("id, status, closes_at, opens_at, open_run_id")
     .eq("drop_id", closed.drop_id)
     .eq("number", closed.number + 1)
     .maybeSingle();
 
   if (existingNext) {
+    if (existingNext.status === "scheduled" && hasFutureStart(existingNext, now)) {
+      return { skipped: true, reason: "future_start_scheduled" };
+    }
+
     if (existingNext.status === "scheduled") {
+      await cancelBatchOpen(existingNext.open_run_id);
       await admin
         .from("batches")
-        .update({ status: "open", opens_at: nowIso })
+        .update({ status: "open", opens_at: nowIso, open_run_id: null })
         .eq("id", existingNext.id);
       const runId = await scheduleBatchCutoff(
         existingNext.id,
@@ -267,4 +293,96 @@ export async function finaliseBatchClose(batchId: string): Promise<{
       ? { openedBatchId: successor.openedBatchId }
       : {}),
   };
+}
+
+export type OpenScheduledBatchResult =
+  | { opened: true }
+  | {
+      opened: false;
+      reason:
+        | "not_scheduled"
+        | "vendor_not_approved"
+        | "already_open"
+        | "blocked";
+    };
+
+/**
+ * Opens a batch at the start time a vendor chose for it (see `scheduleBatchOpen`).
+ * Runs from the `batch-open` Trigger task, so every branch has to be a safe
+ * no-op rather than an error: the vendor may have opened it early, closed the
+ * drop, or let the payout approval lapse since this was scheduled.
+ */
+export async function openScheduledBatch(
+  batchId: string,
+): Promise<OpenScheduledBatchResult> {
+  const admin = createAdminClient();
+  const nowIso = new Date().toISOString();
+
+  const { data: batch } = await admin
+    .from("batches")
+    .select("id, drop_id, status, closes_at")
+    .eq("id", batchId)
+    .maybeSingle();
+
+  if (!batch || batch.status !== "scheduled") {
+    return { opened: false, reason: "not_scheduled" };
+  }
+
+  const { data: drop } = await admin
+    .from("drops")
+    .select("vendor_id")
+    .eq("id", batch.drop_id)
+    .maybeSingle();
+
+  if (!drop || !(await isVendorApprovedForSelling(drop.vendor_id))) {
+    return { opened: false, reason: "vendor_not_approved" };
+  }
+
+  const { data: existingOpen } = await admin
+    .from("batches")
+    .select("id")
+    .eq("drop_id", batch.drop_id)
+    .eq("status", "open")
+    .maybeSingle();
+
+  if (existingOpen) {
+    return { opened: false, reason: "already_open" };
+  }
+
+  // Guarded on the current status so a race with a manual "Open for orders"
+  // click can't open the same batch twice.
+  const { data: updated } = await admin
+    .from("batches")
+    .update({ status: "open", opens_at: nowIso, open_run_id: null })
+    .eq("id", batchId)
+    .eq("status", "scheduled")
+    .select("id")
+    .maybeSingle();
+
+  if (!updated) {
+    // Lost the race, or the freight-readiness trigger rejected it (a
+    // published product is missing the weight/volume this freight mode
+    // needs) — either way, leave it scheduled and tell the vendor why.
+    await admin.from("batch_events").insert({
+      batch_id: batchId,
+      type: "open_failed",
+      message:
+        "This batch could not open automatically. Check that every product has a shipping size, then open it yourself.",
+      is_public: false,
+    });
+    return { opened: false, reason: "blocked" };
+  }
+
+  const runId = await scheduleBatchCutoff(batchId, new Date(batch.closes_at));
+  if (runId) {
+    await admin.from("batches").update({ cutoff_run_id: runId }).eq("id", batchId);
+  }
+
+  await admin.from("batch_events").insert({
+    batch_id: batchId,
+    type: "opened",
+    message: "Orders are open.",
+  });
+
+  return { opened: true };
 }

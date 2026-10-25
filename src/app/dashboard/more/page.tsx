@@ -6,10 +6,9 @@ import { PushEnableCard } from "@/components/dashboard/push-enable-card";
 import { CopyButton } from "@/components/share/copy-button";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
-import { requireVendor } from "@/lib/auth";
+import { requireVendor, type VendorContext } from "@/lib/auth";
 import { env } from "@/lib/env";
 import { PLATFORM_FEE_PERCENT } from "@/lib/fees";
-import { isPaystackConfigured, paystackMode } from "@/lib/paystack";
 import { syncVendorPayoutStatus } from "@/lib/payout-verification";
 import { absoluteUrl } from "@/lib/site";
 import { getVendorApproval } from "@/lib/vendor-approval";
@@ -25,12 +24,6 @@ export default async function MorePage() {
     getVendorApproval(vendor),
   ]);
   const profileUrl = absoluteUrl(`/${vendor.slug}`, env.NEXT_PUBLIC_SITE_URL);
-  const paystackReady = isPaystackConfigured();
-  const mode = paystackMode();
-  const webhookUrl = absoluteUrl(
-    "/api/webhooks/paystack",
-    env.NEXT_PUBLIC_SITE_URL,
-  );
 
   return (
     <div className="-mx-5 -my-6 lg:-mx-8 lg:-my-7">
@@ -53,7 +46,6 @@ export default async function MorePage() {
               ["#business", "Business"],
               ["#notifications", "Notifications"],
               ["#pickup", "Pickup"],
-              ["#payments", "Payments"],
               ["#payouts", "Payouts"],
             ].map(([href, label]) => (
               <a
@@ -122,63 +114,6 @@ export default async function MorePage() {
         </CardBody>
       </Card>
 
-      <Card className="scroll-mt-8" id="payments">
-        <CardHeader title="Payments (Paystack)" />
-        <CardBody className="space-y-3 text-sm">
-          <dl className="space-y-3">
-            <div className="flex items-baseline justify-between gap-4">
-              <dt className="text-ink-muted">Mode</dt>
-              <dd className="font-medium capitalize text-ink">{mode}</dd>
-            </div>
-            <div className="flex items-baseline justify-between gap-4">
-              <dt className="text-ink-muted">API keys</dt>
-              <dd className="font-medium text-ink">
-                {paystackReady ? "Configured" : "Missing"}
-              </dd>
-            </div>
-            <div className="flex items-baseline justify-between gap-4">
-              <dt className="text-ink-muted">Subaccount</dt>
-              <dd className="font-medium text-ink" data-numeric>
-                {payout.subaccountCode ?? "Not connected"}
-              </dd>
-            </div>
-            <div className="flex items-baseline justify-between gap-4">
-              <dt className="text-ink-muted">Paystack verification</dt>
-              <dd className="font-medium text-ink">
-                {!payout.connected
-                  ? "Not connected"
-                  : payout.verified
-                    ? "Verified"
-                    : "Not verified"}
-              </dd>
-            </div>
-          </dl>
-          <p className="text-ink-muted">
-            See{" "}
-            <Link
-              href="/dashboard/money#how-payouts-work"
-              className="font-medium text-brand-700 underline-offset-2 hover:underline"
-            >
-              Money
-            </Link>{" "}
-            for how cash-out to MoMo works. Webhook endpoint (paste into
-            Paystack → Settings → API Keys & Webhooks for both test and live):
-          </p>
-          <div className="flex flex-wrap items-center gap-2">
-            <code className="truncate rounded-control bg-surface-muted px-2.5 py-1.5 text-xs text-ink">
-              {webhookUrl}
-            </code>
-            <CopyButton value={webhookUrl} variant="secondary" size="sm" />
-          </div>
-          {!paystackReady && (
-            <p className="text-closing">
-              Add {mode === "live" ? "live" : "test"} secret and public keys to
-              `.env.local`, then restart the app.
-            </p>
-          )}
-        </CardBody>
-      </Card>
-
       <Card className="scroll-mt-8" id="payouts">
         <CardHeader title="Payouts" />
         <CardBody className="space-y-4">
@@ -195,37 +130,7 @@ export default async function MorePage() {
                   on shipping.
                 </span>
               </p>
-              {(vendor.payoutAccountName || vendor.payoutAccountNumber) && (
-                <dl className="space-y-2 rounded-card border border-border px-4 py-3 text-sm">
-                  {vendor.payoutAccountName && (
-                    <div className="flex items-baseline justify-between gap-4">
-                      <dt className="text-ink-muted">Account name</dt>
-                      <dd className="font-medium text-ink">
-                        {vendor.payoutAccountName}
-                      </dd>
-                    </div>
-                  )}
-                  <div className="flex items-baseline justify-between gap-4">
-                    <dt className="text-ink-muted">Method</dt>
-                    <dd className="font-medium text-ink">
-                      {vendor.payoutChannel === "bank"
-                        ? "Bank account"
-                        : "Mobile money"}
-                      {vendor.payoutBankCode
-                        ? ` · ${vendor.payoutBankCode}`
-                        : ""}
-                    </dd>
-                  </div>
-                  {vendor.payoutAccountNumber && (
-                    <div className="flex items-baseline justify-between gap-4">
-                      <dt className="text-ink-muted">Account</dt>
-                      <dd className="font-medium text-ink" data-numeric>
-                        {vendor.payoutAccountNumber}
-                      </dd>
-                    </div>
-                  )}
-                </dl>
-              )}
+              <PayoutAccountSummary vendor={vendor} />
               <ButtonLink href="/onboarding/payout?from=more" size="sm">
                 Change payout method
               </ButtonLink>
@@ -244,6 +149,7 @@ export default async function MorePage() {
                     : "Your payout details are waiting for Preorders review. Products, batches and checkout unlock after approval."}
                 </span>
               </p>
+              <PayoutAccountSummary vendor={vendor} />
               <div className="flex flex-wrap gap-2">
                 <ButtonLink
                   href="/onboarding/payout?from=more"
@@ -298,5 +204,43 @@ export default async function MorePage() {
         </main>
       </div>
     </div>
+  );
+}
+
+/** What was submitted, so a vendor can check it against what they typed — whether it's approved, pending, or rejected. */
+function PayoutAccountSummary({
+  vendor,
+}: {
+  vendor: Pick<
+    VendorContext,
+    "payoutAccountName" | "payoutChannel" | "payoutBankCode" | "payoutAccountNumber"
+  >;
+}) {
+  if (!vendor.payoutAccountName && !vendor.payoutAccountNumber) return null;
+
+  return (
+    <dl className="space-y-2 rounded-card border border-border px-4 py-3 text-sm">
+      {vendor.payoutAccountName && (
+        <div className="flex items-baseline justify-between gap-4">
+          <dt className="text-ink-muted">Account name</dt>
+          <dd className="font-medium text-ink">{vendor.payoutAccountName}</dd>
+        </div>
+      )}
+      <div className="flex items-baseline justify-between gap-4">
+        <dt className="text-ink-muted">Method</dt>
+        <dd className="font-medium text-ink">
+          {vendor.payoutChannel === "bank" ? "Bank account" : "Mobile money"}
+          {vendor.payoutBankCode ? ` · ${vendor.payoutBankCode}` : ""}
+        </dd>
+      </div>
+      {vendor.payoutAccountNumber && (
+        <div className="flex items-baseline justify-between gap-4">
+          <dt className="text-ink-muted">Account</dt>
+          <dd className="font-medium text-ink" data-numeric>
+            {vendor.payoutAccountNumber}
+          </dd>
+        </div>
+      )}
+    </dl>
   );
 }

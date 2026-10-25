@@ -1,22 +1,28 @@
-import { Clock, MessageCircle, Package } from "lucide-react";
+import { Clock, ListOrdered, MessageCircle, Package } from "lucide-react";
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { Logo } from "@/components/brand/logo";
-import { RememberPortal } from "@/components/public/remember-portal";
+import { RememberOrder } from "@/components/public/remember-order";
 import { CopyButton } from "@/components/share/copy-button";
 import { ButtonLink } from "@/components/ui/button";
 import { MoneyRow } from "@/components/ui/money-row";
 import { StatusPill } from "@/components/ui/status-pill";
-import { mapsEmbedSrc } from "@/lib/maps-link";
+import { mapsEmbedSrc, splitDeliveryNote } from "@/lib/maps-link";
 import { formatGhs } from "@/lib/money";
 import { settleFromCallback } from "@/lib/payments";
 import { formatLocalPhone } from "@/lib/phone";
 import { getOrderByToken } from "@/lib/queries/order";
 import { getOrderShareCard } from "@/lib/queries/order-share-card";
-import { absoluteUrl, customerPortalPath, dropPath, orderPath, whatsappChatLink } from "@/lib/site";
+import {
+  absoluteUrl,
+  dropPath,
+  orderPath,
+  myOrdersPath,
+  whatsappChatLink,
+} from "@/lib/site";
 import { ORDER_STATUS, orderStatusLabel } from "@/lib/status";
 import { BUCKETS, publicUrl } from "@/lib/storage";
 import { formatAccraDate, formatAccraDateTime } from "@/lib/time";
@@ -79,21 +85,27 @@ export default async function OrderPage({
   const link = absoluteUrl(orderPath(order.publicToken));
   const awaitingFreight =
     order.status === "awaiting_freight" && order.freightActual !== null;
+  // Pickup notes are always a bare vendor-set Maps link; delivery notes may now
+  // be a written address with an optional pin appended — this handles both.
+  const { address: deliveryAddress, mapsUrl: deliveryMapsUrl } =
+    splitDeliveryNote(order.deliveryNote ?? "");
+
+  const shippingSettled = order.paidFreight || order.freightActual === 0;
+  const shippingAmount = order.freightActual ?? order.freightEstimate;
+  const [latestUpdates, olderUpdates] = [
+    order.timeline.slice(0, 3),
+    order.timeline.slice(3),
+  ];
 
   return (
     <div className="min-h-dvh bg-canvas">
       <ClearCartOnConfirm batchId={order.batch.id} />
-      {order.portalToken ? (
-        <RememberPortal
-          vendorSlug={order.vendor.slug}
-          portalToken={order.portalToken}
-        />
-      ) : null}
+      <RememberOrder token={order.publicToken} />
       <header className="border-b border-border bg-surface">
-        <div className="mx-auto flex max-w-lg items-center justify-between px-5 py-3">
+        <div className="mx-auto flex max-w-lg items-center justify-between gap-3 px-5 py-3">
           <Link
             href={dropPath(order.vendor.slug, order.drop.slug)}
-            className="flex items-center gap-2"
+            className="flex min-w-0 items-center gap-2"
           >
             {order.vendor.logoPath ? (
               <Image
@@ -104,39 +116,47 @@ export default async function OrderPage({
                 className="size-8 rounded-full object-cover"
               />
             ) : (
-              <span className="flex size-8 items-center justify-center rounded-full bg-brand-100 text-xs font-semibold text-brand-800">
+              <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-brand-100 text-xs font-semibold text-brand-800">
                 {order.vendor.businessName.slice(0, 2).toUpperCase()}
               </span>
             )}
-            <span className="text-sm font-medium text-ink">
+            <span className="truncate text-sm font-medium text-ink">
               {order.vendor.businessName}
             </span>
           </Link>
 
-          <StatusPill tone={ORDER_STATUS[order.status].tone}>
-            {orderStatusLabel(order.status, order.fulfilment, "public")}
-          </StatusPill>
+          <Link
+            href={myOrdersPath()}
+            className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-control px-2.5 text-sm font-medium text-ink-muted hover:bg-surface-muted hover:text-ink"
+          >
+            <ListOrdered className="size-4" aria-hidden />
+            My orders
+          </Link>
         </div>
       </header>
 
       <main className="mx-auto max-w-lg space-y-8 px-5 py-6">
-        <section className="space-y-1">
-          <p className="text-sm text-ink-muted">Order</p>
-          <div className="flex items-center gap-2">
+        <section className="space-y-2">
+          <StatusPill tone={ORDER_STATUS[order.status].tone}>
+            {orderStatusLabel(order.status, order.fulfilment, "public")}
+          </StatusPill>
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
             <h1
               className="font-display text-2xl font-semibold tracking-tight text-ink"
               data-numeric
             >
-              {order.code}
+              Order {order.code}
             </h1>
             <CopyButton
               value={link}
               label="Copy link"
-              copiedLabel="Link copied"
+              copiedLabel="Copied"
+              variant="ghost"
+              size="sm"
             />
           </div>
           <p className="text-sm text-ink-muted">
-            Batch {order.batch.number} &middot; placed{" "}
+            {order.drop.title} &middot; Batch {order.batch.number} &middot; placed{" "}
             {formatAccraDate(order.createdAt)}
           </p>
         </section>
@@ -176,24 +196,22 @@ export default async function OrderPage({
               moves.
             </p>
           ) : (
-            <ol className="space-y-3">
-              {order.timeline.map((event) => (
-                <li key={event.id} className="flex gap-3">
-                  <span
-                    className="mt-1.5 size-2 shrink-0 rounded-full bg-brand-400"
-                    aria-hidden
-                  />
-                  <div>
-                    <p className="text-sm text-ink">
-                      {event.message ?? event.type.replace(/_/g, " ")}
-                    </p>
-                    <p className="text-xs text-ink-subtle">
-                      {formatAccraDateTime(event.createdAt)}
-                    </p>
+            <>
+              <UpdateList events={latestUpdates} />
+              {olderUpdates.length > 0 && (
+                <details className="group">
+                  <summary className="cursor-pointer list-none text-sm font-medium text-ink-muted hover:text-ink">
+                    <span className="group-open:hidden">
+                      Show {olderUpdates.length} earlier update{olderUpdates.length === 1 ? "" : "s"}
+                    </span>
+                    <span className="hidden group-open:inline">Hide earlier updates</span>
+                  </summary>
+                  <div className="mt-3">
+                    <UpdateList events={olderUpdates} />
                   </div>
-                </li>
-              ))}
-            </ol>
+                </details>
+              )}
+            </>
           )}
         </section>
 
@@ -214,67 +232,75 @@ export default async function OrderPage({
 
         <section className="space-y-3">
           <h2 className="font-display text-base font-semibold text-ink">
-            What you ordered
+            Your order
           </h2>
 
-          <ul className="divide-y divide-border rounded-card border border-border bg-surface">
-            {order.items.map((item) => (
-              <li key={item.id} className="flex items-center gap-3 p-3">
-                <div className="relative size-12 shrink-0 overflow-hidden rounded-lg bg-surface-muted">
-                  {item.imagePath && (
-                    <Image
-                      src={publicUrl(BUCKETS.productImages, item.imagePath)}
-                      alt=""
-                      fill
-                      sizes="48px"
-                      className="object-cover"
-                    />
-                  )}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-medium text-ink">
-                    {item.name}
+          <div className="rounded-card border border-border bg-surface">
+            <ul className="divide-y divide-border">
+              {order.items.map((item) => (
+                <li key={item.id} className="flex items-center gap-3 p-3">
+                  <div className="relative size-12 shrink-0 overflow-hidden rounded-lg bg-surface-muted">
+                    {item.imagePath && (
+                      <Image
+                        src={publicUrl(BUCKETS.productImages, item.imagePath)}
+                        alt=""
+                        fill
+                        sizes="48px"
+                        className="object-cover"
+                      />
+                    )}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-medium text-ink">
+                      {item.qty > 1 && `${item.qty}× `}
+                      {item.name}
+                    </p>
+                    {item.variantLabel && (
+                      <p className="text-xs text-ink-muted">{item.variantLabel}</p>
+                    )}
+                  </div>
+                  <p className="shrink-0 text-sm text-ink" data-numeric>
+                    {formatGhs(item.unitPrice * item.qty)}
                   </p>
-                  {item.variantLabel && (
-                    <p className="text-xs text-ink-muted">{item.variantLabel}</p>
-                  )}
-                </div>
-                <p className="shrink-0 text-sm text-ink-muted" data-numeric>
-                  {item.qty} &times; {formatGhs(item.unitPrice)}
-                </p>
-              </li>
-            ))}
-          </ul>
+                </li>
+              ))}
+            </ul>
 
-          <div className="space-y-3 rounded-card border border-border bg-surface p-4">
-            <MoneyRow
-              label={order.paidGoods ? "Goods (paid)" : "Goods"}
-              amount={order.goodsTotal}
-            />
-            <MoneyRow
-              label={
-                order.freightActual === null
-                  ? "Shipping, later"
-                  : order.paidFreight
-                    ? "Shipping (paid)"
-                    : "Shipping"
-              }
-              amount={order.freightActual ?? order.freightEstimate}
-              muted={order.freightActual === null}
-              hint={
-                order.freightActual === null ? (
-                  <span className="ml-1 text-ink-subtle">estimate</span>
-                ) : null
-              }
-            />
+            <div className="space-y-2.5 border-t border-border p-4">
+              <MoneyRow
+                label="Goods"
+                amount={order.goodsTotal}
+                hint={<PaidTag paid={order.paidGoods} />}
+              />
+              <MoneyRow
+                label={order.freightActual === null ? "Shipping (estimate)" : "Shipping"}
+                amount={shippingAmount}
+                muted={order.freightActual === null}
+                hint={
+                  order.freightActual === null ? (
+                    <span className="ml-1.5 text-xs text-ink-subtle">billed when it lands</span>
+                  ) : (
+                    // A zero share has nothing to pay, so it's settled the
+                    // moment it's invoiced — never shows up in `payments`.
+                    <PaidTag paid={shippingSettled} />
+                  )
+                }
+              />
+              <MoneyRow
+                label={order.freightActual === null ? "Estimated total" : "Total"}
+                amount={order.goodsTotal + shippingAmount}
+                strong
+                className="border-t border-border pt-2.5"
+              />
+            </div>
           </div>
         </section>
 
         <section className="space-y-3 rounded-card border border-border bg-surface p-4 text-sm">
           <h2 className="font-display text-base font-semibold text-ink">
-            Delivery
+            {order.fulfilment === "pickup" ? "Pickup" : "Delivery"}
           </h2>
-          <p className="text-ink-muted">
+          <p className="whitespace-pre-line text-ink-muted">
             {order.fulfilment === "pickup" ? (
               order.deliveryNote ? (
                 <>
@@ -293,66 +319,31 @@ export default async function OrderPage({
               )
             ) : order.deliveryNote ? (
               <>
-                Delivering to your Maps pin.{" "}
-                <a
-                  href={order.deliveryNote}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="font-medium text-brand-700 underline-offset-2 hover:underline"
-                >
-                  Open in Google Maps
-                </a>
+                {deliveryAddress || "Delivering to your shared location."}
+                {deliveryMapsUrl && (
+                  <>
+                    {" "}
+                    <a
+                      href={deliveryMapsUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="font-medium text-brand-700 underline-offset-2 hover:underline"
+                    >
+                      Open in Google Maps
+                    </a>
+                  </>
+                )}
               </>
             ) : (
               "Delivering to: address to be confirmed"
             )}
           </p>
-          {order.deliveryNote && (
-            <DeliveryMapPreview link={order.deliveryNote} />
-          )}
+          {deliveryMapsUrl && <DeliveryMapPreview link={deliveryMapsUrl} />}
           <p className="text-ink-muted">
             {order.customer.name} &middot;{" "}
             <span data-numeric>{formatLocalPhone(order.customer.phone)}</span>
           </p>
         </section>
-
-        {order.portalToken && (
-          <section className="space-y-3 rounded-card border border-border bg-surface p-4">
-            <h2 className="font-display text-base font-semibold text-ink">
-              All your orders
-            </h2>
-            <p className="text-sm text-ink-muted">
-              Same email keeps every order with {order.vendor.businessName} in
-              one place. Bookmark it.
-            </p>
-            <ButtonLink
-              href={customerPortalPath(order.portalToken)}
-              variant="secondary"
-              block
-            >
-              Open your orders hub
-            </ButtonLink>
-            {order.siblingOrders.length > 0 && (
-              <ul className="divide-y divide-border rounded-lg border border-border">
-                {order.siblingOrders.map((sibling) => (
-                  <li key={sibling.publicToken}>
-                    <Link
-                      href={orderPath(sibling.publicToken)}
-                      className="flex items-center justify-between gap-3 px-3 py-2.5 text-sm hover:bg-surface-muted"
-                    >
-                      <span className="font-medium text-ink" data-numeric>
-                        {sibling.code}
-                      </span>
-                      <StatusPill tone={ORDER_STATUS[sibling.status].tone}>
-                        {ORDER_STATUS[sibling.status].publicLabel}
-                      </StatusPill>
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </section>
-        )}
 
         {order.vendor.whatsappNumber && (
           <ButtonLink
@@ -372,8 +363,10 @@ export default async function OrderPage({
 
         <footer className="flex flex-col items-center gap-2 pt-4 text-center">
           <Logo className="opacity-60" />
-          <p className="text-xs text-ink-subtle">
-            Keep this link — and your orders hub — to come back anytime.
+          <p className="max-w-xs text-xs leading-relaxed text-ink-subtle">
+            This order is saved on this phone. Tap <strong className="font-medium">Orders</strong> in{" "}
+            {order.vendor.businessName}&apos;s shop to find it again
+            {order.customer.email ? ", or use the link we emailed you" : ""}.
           </p>
         </footer>
       </main>
@@ -428,7 +421,8 @@ function FreightDue({
       </p>
       <p className="text-sm leading-relaxed text-ink-muted">
         Shipping for your share is {formatGhs(amount)}
-        {difference !== 0 && (
+        {/* Comparing against a ₵0 estimate ("up ₵0.10 on ₵0.00") reads as noise. */}
+        {estimate > 0 && difference !== 0 && (
           <>
             , {difference > 0 ? "up" : "down"} {formatGhs(Math.abs(difference))}{" "}
             on the {formatGhs(estimate)} estimate
@@ -438,6 +432,38 @@ function FreightDue({
       </p>
       <ResumeFreightPay token={token} amount={amount} />
     </section>
+  );
+}
+
+function UpdateList({
+  events,
+}: {
+  events: { id: string; type: string; message: string | null; createdAt: string }[];
+}) {
+  return (
+    <ol className="space-y-3">
+      {events.map((event) => (
+        <li key={event.id} className="flex gap-3">
+          <span className="mt-1.5 size-2 shrink-0 rounded-full bg-brand-400" aria-hidden />
+          <div>
+            <p className="text-sm text-ink">{event.message ?? event.type.replace(/_/g, " ")}</p>
+            <p className="text-xs text-ink-subtle">{formatAccraDateTime(event.createdAt)}</p>
+          </div>
+        </li>
+      ))}
+    </ol>
+  );
+}
+
+function PaidTag({ paid }: { paid: boolean }) {
+  return paid ? (
+    <span className="ml-1.5 rounded-full bg-open-tint px-1.5 py-0.5 text-[11px] font-medium text-open">
+      Paid
+    </span>
+  ) : (
+    <span className="ml-1.5 rounded-full bg-closing-tint px-1.5 py-0.5 text-[11px] font-medium text-closing">
+      Due
+    </span>
   );
 }
 

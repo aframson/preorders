@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 
 import { ListSearch } from "@/components/ui/list-search";
-import { PLATFORM_FEE_PERCENT } from "@/lib/fees";
 import { formatGhs } from "@/lib/money";
 import type { VendorSettlement } from "@/lib/queries/money";
 import { matchesQuery } from "@/lib/search";

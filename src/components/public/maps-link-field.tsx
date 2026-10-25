@@ -81,15 +81,21 @@ export function MapsLinkField({
     });
   });
 
+  // `refreshPreview` is an Effect Event: always sees the latest closure, and
+  // must never appear in either effect's dependency array below.
   useEffect(() => {
     const handle = window.setTimeout(() => refreshPreview(value), 400);
     return () => window.clearTimeout(handle);
-  }, [value, refreshPreview]);
+  }, [value]);
 
-  // First paint for an existing saved pin.
+  // First paint for an existing saved pin: skip the debounce so a vendor
+  // editing a saved location sees their pin immediately, not 400ms later.
   useEffect(() => {
-    if (defaultValue) refreshPreview(defaultValue);
-  }, [defaultValue, refreshPreview]);
+    if (defaultValue) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      refreshPreview(defaultValue);
+    }
+  }, [defaultValue]);
 
   const showError = error ?? previewError;
 

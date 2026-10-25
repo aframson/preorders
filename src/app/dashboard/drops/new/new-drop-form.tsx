@@ -4,7 +4,7 @@ import { useActionState } from "react";
 
 import { PageHeader } from "@/components/dashboard/page-header";
 import { Button } from "@/components/ui/button";
-import { Field, Input, Select, Textarea } from "@/components/ui/field";
+import { Field, FormError, Input, Select, Textarea } from "@/components/ui/field";
 import { createDrop, type ActionState } from "../actions";
 
 export function NewDropForm() {
@@ -21,7 +21,13 @@ export function NewDropForm() {
       />
 
       <form action={submit} className="space-y-6">
-        <Field label="Drop name" htmlFor="title" error={state.error}>
+        <FormError message={state.error} />
+
+        <Field
+          label="Drop name"
+          htmlFor="title"
+          error={state.fieldErrors?.title}
+        >
           <Input
             id="title"
             name="title"
@@ -35,6 +41,7 @@ export function NewDropForm() {
           label="Description"
           htmlFor="description"
           hint="Optional. Shown under your business name on the link."
+          error={state.fieldErrors?.description}
         >
           <Textarea
             id="description"
@@ -48,6 +55,7 @@ export function NewDropForm() {
           label="How do you usually ship?"
           htmlFor="defaultFreightMode"
           hint="You can change this per batch."
+          error={state.fieldErrors?.defaultFreightMode}
         >
           <Select id="defaultFreightMode" name="defaultFreightMode" defaultValue="sea_cbm">
             <option value="sea_cbm">Sea &mdash; cheaper, 30 to 60 days</option>

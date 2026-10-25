@@ -266,7 +266,6 @@ export type CreatedOrder = {
   id: string;
   code: string;
   publicToken: string;
-  portalToken: string;
   goodsTotal: Pesewas;
   freightEstimate: Pesewas;
 };
@@ -333,7 +332,7 @@ export async function createOrder(
 
   const phone = normalisePhone(input.customer.phone);
 
-  let customer: { id: string; portalToken: string };
+  let customer: { id: string };
   try {
     customer = await upsertCustomer({
       vendorId: input.vendorId,
@@ -419,7 +418,6 @@ export async function createOrder(
       id: pending.id,
       code: pending.code,
       publicToken: pending.public_token,
-      portalToken: customer.portalToken,
       goodsTotal: priced.goodsTotal,
       freightEstimate: priced.freightEstimate,
     };
@@ -430,6 +428,7 @@ export async function createOrder(
   });
 
   if (codeError || !code) {
+    console.error("[DEBUG createOrder] next_order_code failed", codeError);
     throw new CheckoutError("Could not create your order. Try again.");
   }
 
@@ -451,6 +450,7 @@ export async function createOrder(
     .single();
 
   if (orderError || !order) {
+    console.error("[DEBUG createOrder] orders insert failed", orderError);
     throw new CheckoutError("Could not create your order. Try again.");
   }
 
@@ -459,6 +459,7 @@ export async function createOrder(
   );
 
   if (itemsError) {
+    console.error("[DEBUG createOrder] order_items insert failed", itemsError);
     await admin.from("orders").delete().eq("id", order.id);
     throw new CheckoutError("Could not create your order. Try again.");
   }
@@ -469,7 +470,6 @@ export async function createOrder(
     id: order.id,
     code: order.code,
     publicToken: order.public_token,
-    portalToken: customer.portalToken,
     goodsTotal: priced.goodsTotal,
     freightEstimate: priced.freightEstimate,
   };

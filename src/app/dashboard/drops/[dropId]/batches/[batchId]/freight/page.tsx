@@ -38,6 +38,8 @@ export default async function FreightPage({
     null,
   );
 
+  const shippingById = new Map(shipping.map((order) => [order.id, order]));
+
   const someonePaid = shipping.some((order) => order.freightPaidAt);
   const canRevise = Boolean(batch.freightFinalisedAt) && !someonePaid;
   const initialChargeCedis =
@@ -86,8 +88,10 @@ export default async function FreightPage({
           orderId: row.orderId,
           code: row.code,
           customerName: row.customerName,
+          itemsSummary: row.itemsSummary,
           units: row.units,
           estimate: row.estimate,
+          currentAmount: shippingById.get(row.orderId)?.freightAmount ?? row.estimate,
         }))}
       />
     </div>

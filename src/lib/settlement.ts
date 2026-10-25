@@ -1,3 +1,4 @@
+import { toCsv } from "./csv";
 import { allocateFreight, freightUnits, type FreightMode } from "./freight";
 import type { Pesewas } from "./money";
 
@@ -37,6 +38,8 @@ export type FreightPreviewRow = {
   orderId: string;
   code: string;
   customerName: string;
+  /** e.g. "2x Sneakers (Size 42), 1x Cap" — so a vendor billing by hand can see what they're pricing. */
+  itemsSummary: string;
   units: number;
   estimate: Pesewas;
   amount: Pesewas;
@@ -77,6 +80,21 @@ function unitsFor(batch: SettlementBatch, order: SettlementOrder): number {
   );
 }
 
+/** "2x Sneakers (Size 42), 1x Cap" — lets a vendor pricing an order by hand see what's in it. */
+function itemsSummary(order: SettlementOrder): string {
+  return order.items
+    .map((item) => {
+      const name = item.snapshot.productName ?? "Item";
+      const variant =
+        item.snapshot.variantLabel ??
+        (item.snapshot.variantName && item.snapshot.variantValue
+          ? `${item.snapshot.variantName} ${item.snapshot.variantValue}`
+          : null);
+      return `${item.qty}x ${variant ? `${name} (${variant})` : name}`;
+    })
+    .join(", ");
+}
+
 /**
  * What each customer would pay if the vendor charged `charge` for this batch.
  * Pure: nothing is written until `finaliseFreight` runs.
@@ -110,11 +128,75 @@ export function previewFreight(
       orderId: order.id,
       code: order.code,
       customerName: order.customer.name,
+      itemsSummary: itemsSummary(order),
       units,
       estimate: order.freightEstimate,
       amount: byId.get(order.id)?.amount ?? 0,
     })),
   };
+}
+
+/**
+ * The hand-priced alternative to `previewFreight`: the vendor sets each
+ * shipping order's amount directly instead of splitting one total by weight
+ * or volume. Some forwarders bill per item or per shipment rather than
+ * strictly by weight, and no proportional formula matches that — this is
+ * for when the vendor already knows what each customer owes.
+ *
+ * Any order not named in `amounts` is treated as owing nothing, same as
+ * typing "0" — there is no implicit default, so a row silently missing from
+ * the submitted form can never end up under-charged by accident.
+ */
+export function previewIndividualFreight(
+  batch: SettlementBatch,
+  amounts: Readonly<Record<string, Pesewas>>,
+  cost: Pesewas | null = null,
+): FreightPreview {
+  const included = shipping(batch);
+
+  const rows: FreightPreviewRow[] = included.map((order) => {
+    const requested = amounts[order.id] ?? 0;
+    const amount = Number.isFinite(requested) ? Math.max(0, Math.round(requested)) : 0;
+    return {
+      orderId: order.id,
+      code: order.code,
+      customerName: order.customer.name,
+      itemsSummary: itemsSummary(order),
+      units: unitsFor(batch, order),
+      estimate: order.freightEstimate,
+      amount,
+    };
+  });
+
+  const charge = rows.reduce((sum, row) => sum + row.amount, 0);
+  const unitsTotal = rows.reduce((sum, row) => sum + row.units, 0);
+
+  return {
+    batch,
+    shipping: included,
+    unitsTotal,
+    charge,
+    cost,
+    margin: cost === null ? null : charge - cost,
+    alreadyFinalised: Boolean(batch.freightFinalisedAt),
+    rows,
+  };
+}
+
+/**
+ * Whether an order has nothing left to pay on shipping: a real payment, a
+ * zero share that was waived (status moves without `freightPaidAt`), or goods
+ * already collected.
+ */
+export function isFreightSettled(order: {
+  status: string;
+  freightPaidAt: string | null;
+}): boolean {
+  return (
+    Boolean(order.freightPaidAt) ||
+    order.status === "freight_paid" ||
+    order.status === "collected"
+  );
 }
 
 export class SettlementError extends Error {
@@ -187,20 +269,14 @@ export function manifestAsText(
 }
 
 export function manifestAsCsv(lines: ManifestLine[]): string {
-  const header = "qty,name,variant,weight_grams,volume_cm3";
-  const rows = lines.map((line) =>
-    [
+  return toCsv([
+    ["qty", "name", "variant", "weight_grams", "volume_cm3"],
+    ...lines.map((line) => [
       line.qty,
-      csvCell(line.name),
-      csvCell(line.variantLabel ?? ""),
+      line.name,
+      line.variantLabel ?? "",
       line.weightGrams,
       line.volumeCm3,
-    ].join(","),
-  );
-  return [header, ...rows].join("\n");
-}
-
-function csvCell(value: string): string {
-  if (/[",\n]/.test(value)) return `"${value.replace(/"/g, '""')}"`;
-  return value;
+    ]),
+  ]);
 }

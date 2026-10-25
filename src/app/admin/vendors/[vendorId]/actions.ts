@@ -5,6 +5,7 @@ import { z } from "zod";
 
 import { requireAdmin } from "@/lib/admin-auth";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { resetVendorApproval } from "@/lib/vendor-approval";
 
 export type ReviewVendorState = {
   error?: string | null;
@@ -95,6 +96,46 @@ export async function rejectVendor(
 
   refreshVendorPages(parsed.data.vendorId);
   return { message: "Review saved. The vendor remains blocked." };
+}
+
+/**
+ * For a subaccount code that's gone stale on Paystack's side (deleted,
+ * mismatched environment, created in the wrong mode) — the payout form can't
+ * recover from this itself because it only ever updates an existing code,
+ * never replaces one. Clearing it here is what lets the vendor's next save
+ * call `createSubaccount` instead and get a code that actually resolves.
+ */
+export async function resetVendorPayout(
+  vendorId: string,
+): Promise<ReviewVendorState> {
+  await requireAdmin();
+  const parsed = z.uuid().safeParse(vendorId);
+  if (!parsed.success) return { error: "Invalid vendor." };
+
+  const admin = createAdminClient();
+  const { error } = await admin
+    .from("vendors")
+    .update({ paystack_subaccount_code: null, payout_verified_at: null })
+    .eq("id", parsed.data);
+
+  if (error) {
+    return { error: "Could not reset the payout connection. Try again." };
+  }
+
+  try {
+    await resetVendorApproval(parsed.data);
+  } catch {
+    return {
+      error:
+        "Payout connection cleared, but the review status could not reset. Refresh and check it.",
+    };
+  }
+
+  refreshVendorPages(parsed.data);
+  return {
+    message:
+      "Payout connection cleared. The vendor needs to reconnect their payout account before they can sell again.",
+  };
 }
 
 function refreshVendorPages(vendorId: string) {

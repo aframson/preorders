@@ -172,8 +172,15 @@ export function batchStats(batch: BatchDetail) {
     awaitingPayment: batch.orders.filter(
       (order) => order.status === "pending_payment",
     ).length,
+    // A zero-pesewas share settles automatically at invoicing time (nothing
+    // to pay, so no `freightPaidAt`) — `status` is what actually tracks
+    // that, same as `settleBatchIfFreightComplete` checks.
     awaitingFreight: shipping.filter(
-      (order) => order.freightInvoicedAt && !order.freightPaidAt,
+      (order) =>
+        order.freightInvoicedAt &&
+        !order.freightPaidAt &&
+        order.status !== "freight_paid" &&
+        order.status !== "collected",
     ).length,
   };
 }

@@ -97,13 +97,14 @@ async function start(
       reference: ref,
       callbackUrl: absoluteUrl(orderPath(target.publicToken)),
       subaccount: target.subaccount,
-      // The subaccount is created with the goods percentage. Freight is a
-      // pass-through, so it has to override that split or we take a cut of
-      // money that was never the vendor's.
-      platformCharge:
-        stage === "freight"
-          ? percentOf(target.amount, PLATFORM_FEE_PERCENT.freight)
-          : undefined,
+      // Always pin the split with an explicit flat charge rather than relying
+      // on the subaccount's stored percentage_charge — Paystack's own docs
+      // disagree about which side (main account vs. subaccount) that
+      // percentage applies to, so trusting it risked sending the vendor only
+      // PLATFORM_FEE_PERCENT.goods of every sale instead of the rest of it.
+      // transaction_charge has no such ambiguity in either version of the
+      // docs: it is always the flat amount the main account keeps.
+      platformCharge: percentOf(target.amount, PLATFORM_FEE_PERCENT[stage]),
       metadata: {
         orderId: target.orderId,
         orderCode: target.code,

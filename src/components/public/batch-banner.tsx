@@ -3,7 +3,7 @@ import { CalendarClock, PackageCheck } from "lucide-react";
 import { Countdown } from "@/components/ui/countdown";
 import { cn } from "@/lib/cn";
 import type { PublicBatch } from "@/lib/queries/public-drop";
-import { batchTone, TONE_CLASSES } from "@/lib/status";
+import { batchTone, hasScheduledStart, TONE_CLASSES } from "@/lib/status";
 import { formatAccraDateTime, formatDeliveryWindow } from "@/lib/time";
 
 /**
@@ -65,7 +65,7 @@ export function BatchBanner({
           Orders are closed right now
         </p>
         <p className="mt-1 text-sm text-ink-muted">
-          {nextBatch
+          {nextBatch && hasScheduledStart(nextBatch)
             ? `Batch ${nextBatch.number} opens ${formatAccraDateTime(new Date(nextBatch.opensAt))}.`
             : "The next batch has not been scheduled yet."}
         </p>

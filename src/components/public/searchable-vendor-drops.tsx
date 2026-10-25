@@ -11,7 +11,7 @@ import { StatusPill } from "@/components/ui/status-pill";
 import type { PublicVendorDrop } from "@/lib/queries/public-vendor";
 import { matchesQuery } from "@/lib/search";
 import { dropPath } from "@/lib/site";
-import { BATCH_STATUS, batchTone } from "@/lib/status";
+import { BATCH_STATUS, batchTone, hasScheduledStart } from "@/lib/status";
 import { BUCKETS, publicUrl } from "@/lib/storage";
 import { formatAccraDateTime } from "@/lib/time";
 
@@ -120,7 +120,7 @@ export function SearchableVendorDrops({
                               ? ` · ${live.orderCount} orders in`
                               : ""
                           }`
-                        : upcoming
+                        : upcoming && hasScheduledStart(upcoming)
                           ? `Batch ${upcoming.number} opens ${formatAccraDateTime(upcoming.opensAt)}`
                           : "The next batch has not been scheduled yet."}
                     </p>

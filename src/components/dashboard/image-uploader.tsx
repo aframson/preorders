@@ -194,9 +194,12 @@ export function ImageUploader({
         ref={inputRef}
         type="file"
         accept="image/*"
-        // `capture` opens the camera directly on Android, which is how most of
-        // these photos are actually taken.
-        capture="environment"
+        // No `capture` attribute: on iOS Safari and most in-app browsers
+        // (including WhatsApp's, which is how vendors usually arrive here),
+        // `capture` skips the picker and launches the camera directly, with
+        // no way back to the gallery. Vendors frequently upload photos a
+        // supplier already sent them over WeChat/WhatsApp rather than a fresh
+        // photo, so the picker has to offer both.
         multiple
         className="sr-only"
         onChange={(event) => handleFiles(event.target.files)}

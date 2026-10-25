@@ -51,6 +51,39 @@ export async function cancelBatchCutoff(runId: string | null): Promise<void> {
   });
 }
 
+export function batchOpenKey(batchId: string, opensAt: Date): string {
+  return `batch-open-${batchId}-${opensAt.toISOString()}`;
+}
+
+/** Returns the run id to store on the batch, or null if unscheduled. */
+export async function scheduleBatchOpen(
+  batchId: string,
+  opensAt: Date,
+): Promise<string | null> {
+  if (!isJobRunnerConfigured()) return null;
+
+  const { tasks } = await import("@trigger.dev/sdk");
+  const handle = await tasks.trigger(
+    "batch-open",
+    { batchId },
+    {
+      delay: opensAt,
+      idempotencyKey: batchOpenKey(batchId, opensAt),
+    },
+  );
+
+  return handle.id;
+}
+
+export async function cancelBatchOpen(runId: string | null): Promise<void> {
+  if (!runId || !isJobRunnerConfigured()) return;
+
+  const { runs } = await import("@trigger.dev/sdk");
+  await runs.cancel(runId).catch(() => {
+    // A run that already finished or was cancelled is not an error here.
+  });
+}
+
 export async function scheduleHoldExpiry(
   orderId: string,
   expiresAt: Date,

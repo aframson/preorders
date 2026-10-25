@@ -14,11 +14,18 @@ import { NAVIGATE_START_EVENT } from "@/lib/navigation-signal";
 function NavigationProgressInner() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const [active, setActive] = useState(false);
+  const currentKey = `${pathname}?${searchParams.toString()}`;
 
-  useEffect(() => {
+  const [active, setActive] = useState(false);
+  // Tracks the URL the bar last saw, so a completed navigation can drop it
+  // immediately — adjusted during render (React's documented pattern for
+  // resetting state when a value changes) rather than from an effect, which
+  // would let the stale bar paint for one extra frame first.
+  const [trackedKey, setTrackedKey] = useState(currentKey);
+  if (currentKey !== trackedKey) {
+    setTrackedKey(currentKey);
     setActive(false);
-  }, [pathname, searchParams]);
+  }
 
   useEffect(() => {
     const start = () => setActive(true);

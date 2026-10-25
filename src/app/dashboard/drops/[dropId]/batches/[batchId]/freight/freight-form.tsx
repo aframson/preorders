@@ -12,15 +12,25 @@ import {
   type FreightMode,
 } from "@/lib/freight";
 import { cedisToPesewas, formatGhs, type Pesewas } from "@/lib/money";
-import { sendFreightInvoices, type FreightState } from "./actions";
+import { useSuccessToast } from "@/lib/use-success-toast";
+import {
+  sendFreightInvoices,
+  sendIndividualFreightInvoices,
+  type FreightState,
+} from "./actions";
 
 type Row = {
   orderId: string;
   code: string;
   customerName: string;
+  itemsSummary: string;
   units: number;
   estimate: Pesewas;
+  /** What this order would be charged if nothing changes — the current invoice, or the checkout-time estimate before one exists. */
+  currentAmount: Pesewas;
 };
+
+type Mode = "auto" | "individual";
 
 export function FreightForm({
   batchId,
@@ -42,6 +52,85 @@ export function FreightForm({
   initialChargeCedis: string;
   rows: Row[];
 }) {
+  const [mode, setMode] = useState<Mode>("auto");
+
+  return (
+    <div className="space-y-6">
+      <div
+        role="tablist"
+        className="inline-flex rounded-full border border-border bg-surface-muted p-1 text-sm"
+      >
+        <button
+          type="button"
+          role="tab"
+          aria-selected={mode === "auto"}
+          onClick={() => setMode("auto")}
+          className={`rounded-full px-4 py-1.5 font-medium transition ${
+            mode === "auto"
+              ? "bg-surface text-ink shadow-sm"
+              : "text-ink-muted hover:text-ink"
+          }`}
+        >
+          Split automatically
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={mode === "individual"}
+          onClick={() => setMode("individual")}
+          className={`rounded-full px-4 py-1.5 font-medium transition ${
+            mode === "individual"
+              ? "bg-surface text-ink shadow-sm"
+              : "text-ink-muted hover:text-ink"
+          }`}
+        >
+          Set each customer&rsquo;s amount
+        </button>
+      </div>
+
+      {mode === "auto" ? (
+        <AutoSplitForm
+          batchId={batchId}
+          dropId={dropId}
+          freightMode={freightMode}
+          unitsTotal={unitsTotal}
+          alreadyFinalised={alreadyFinalised}
+          canRevise={canRevise}
+          initialChargeCedis={initialChargeCedis}
+          rows={rows}
+        />
+      ) : (
+        <IndividualSplitForm
+          batchId={batchId}
+          dropId={dropId}
+          alreadyFinalised={alreadyFinalised}
+          canRevise={canRevise}
+          rows={rows}
+        />
+      )}
+    </div>
+  );
+}
+
+function AutoSplitForm({
+  batchId,
+  dropId,
+  freightMode,
+  unitsTotal,
+  alreadyFinalised,
+  canRevise,
+  initialChargeCedis,
+  rows,
+}: {
+  batchId: string;
+  dropId: string;
+  freightMode: FreightMode;
+  unitsTotal: number;
+  alreadyFinalised: boolean;
+  canRevise: boolean;
+  initialChargeCedis: string;
+  rows: Row[];
+}) {
   const locked = alreadyFinalised && !canRevise;
   const [chargeCedis, setChargeCedis] = useState(initialChargeCedis);
   const [costCedis, setCostCedis] = useState("");
@@ -49,6 +138,7 @@ export function FreightForm({
     sendFreightInvoices,
     {},
   );
+  useSuccessToast(state);
 
   const charge = chargeCedis ? cedisToPesewas(Number(chargeCedis)) : 0;
   const cost = costCedis ? cedisToPesewas(Number(costCedis)) : null;
@@ -190,11 +280,6 @@ export function FreightForm({
           {state.error}
         </p>
       )}
-      {state.message && (
-        <p role="status" className="text-sm text-open">
-          {state.message}
-        </p>
-      )}
 
       {!locked && (
         <Button
@@ -204,6 +289,153 @@ export function FreightForm({
           loading={pending}
           disabled={charge <= 0 || rows.length === 0}
         >
+          {canRevise
+            ? `Update ${rows.length} shipping invoice${rows.length === 1 ? "" : "s"}`
+            : `Send ${rows.length} shipping invoice${rows.length === 1 ? "" : "s"}`}
+        </Button>
+      )}
+    </form>
+  );
+}
+
+function IndividualSplitForm({
+  batchId,
+  dropId,
+  alreadyFinalised,
+  canRevise,
+  rows,
+}: {
+  batchId: string;
+  dropId: string;
+  alreadyFinalised: boolean;
+  canRevise: boolean;
+  rows: Row[];
+}) {
+  const locked = alreadyFinalised && !canRevise;
+  const [costCedis, setCostCedis] = useState("");
+  const [amounts, setAmounts] = useState<Record<string, string>>(() =>
+    Object.fromEntries(
+      rows.map((row) => [row.orderId, (row.currentAmount / 100).toFixed(2)]),
+    ),
+  );
+  const [state, action, pending] = useActionState<FreightState, FormData>(
+    sendIndividualFreightInvoices,
+    {},
+  );
+  useSuccessToast(state);
+
+  const cost = costCedis ? cedisToPesewas(Number(costCedis)) : null;
+  const total = rows.reduce((sum, row) => {
+    const value = Number(amounts[row.orderId]);
+    return sum + (Number.isFinite(value) ? cedisToPesewas(Math.max(0, value)) : 0);
+  }, 0);
+  const margin = cost === null ? null : total - cost;
+
+  return (
+    <form action={action} className="space-y-6">
+      <input type="hidden" name="batchId" value={batchId} />
+      <input type="hidden" name="dropId" value={dropId} />
+
+      <Field
+        label="What the forwarder billed you"
+        htmlFor="individual-cost"
+        hint="Optional. Shown only to you, so the margin is a decision rather than a surprise."
+      >
+        <Input
+          id="individual-cost"
+          name="cost"
+          type="number"
+          min="0"
+          step="0.01"
+          inputMode="decimal"
+          placeholder="0.00"
+          value={costCedis}
+          onChange={(event) => setCostCedis(event.target.value)}
+          disabled={locked}
+        />
+      </Field>
+
+      <div className="overflow-x-auto rounded-card border border-border">
+        <table className="w-full min-w-[36rem] text-left text-sm">
+          <thead className="border-b border-border bg-surface-muted text-xs text-ink-muted">
+            <tr>
+              <th className="px-4 py-2.5 font-medium">Customer</th>
+              <th className="px-4 py-2.5 font-medium">Items</th>
+              <th className="px-4 py-2.5 font-medium">Estimate</th>
+              <th className="px-4 py-2.5 font-medium">Charge</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((row) => (
+              <tr key={row.orderId} className="border-b border-border last:border-0">
+                <td className="px-4 py-3 align-top">
+                  <p className="font-medium text-ink">{row.customerName}</p>
+                  <p className="text-xs text-ink-subtle" data-numeric>
+                    {row.code}
+                  </p>
+                </td>
+                <td className="max-w-[16rem] px-4 py-3 align-top text-ink-muted">
+                  {row.itemsSummary}
+                </td>
+                <td className="px-4 py-3 align-top text-ink-muted" data-numeric>
+                  {formatGhs(row.estimate)}
+                </td>
+                <td className="px-4 py-3 align-top">
+                  <div className="flex items-center gap-1">
+                    <span className="text-ink-subtle">GH&#8373;</span>
+                    <input
+                      type="number"
+                      name={`amount_${row.orderId}`}
+                      min="0"
+                      step="0.01"
+                      inputMode="decimal"
+                      required
+                      value={amounts[row.orderId] ?? ""}
+                      onChange={(event) =>
+                        setAmounts((prev) => ({
+                          ...prev,
+                          [row.orderId]: event.target.value,
+                        }))
+                      }
+                      disabled={locked}
+                      aria-label={`Shipping charge for ${row.customerName}`}
+                      className="w-24 rounded-md border border-border bg-surface px-2 py-1 text-right text-sm text-ink focus:outline-none focus:ring-2 focus:ring-brand/40 disabled:opacity-60"
+                      data-numeric
+                    />
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <div className="space-y-2 rounded-card border border-border bg-surface p-4">
+        <MoneyRow label="Charging customers" amount={total} strong />
+        {cost !== null && (
+          <>
+            <MoneyRow label="Forwarder bill" amount={cost} muted />
+            <MoneyRow
+              label="Your margin"
+              amount={margin ?? 0}
+              muted={(margin ?? 0) < 0}
+            />
+          </>
+        )}
+        <p className="pt-1 text-xs text-ink-subtle">
+          A customer left at GH&#8373;0.00 owes nothing and is settled
+          automatically — use that to waive a share on purpose.
+        </p>
+      </div>
+
+      {state.error && (
+        <p role="alert" className="text-sm text-danger">
+          {state.error}
+        </p>
+      )}
+
+      {!locked && (
+        <Button type="submit" size="lg" block loading={pending} disabled={rows.length === 0}>
           {canRevise
             ? `Update ${rows.length} shipping invoice${rows.length === 1 ? "" : "s"}`
             : `Send ${rows.length} shipping invoice${rows.length === 1 ? "" : "s"}`}

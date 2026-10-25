@@ -34,6 +34,7 @@ export function CutoffCalendar({
   mode = "datetime",
   required,
   className,
+  summaryLabel = "Closes",
 }: {
   id?: string;
   name: string;
@@ -43,6 +44,8 @@ export function CutoffCalendar({
   mode?: Mode;
   required?: boolean;
   className?: string;
+  /** Verb shown in the datetime summary line, e.g. "Opens" vs "Closes". */
+  summaryLabel?: string;
 }) {
   const controlled = value !== undefined;
   const [internal, setInternal] = useState(
@@ -234,10 +237,10 @@ export function CutoffCalendar({
               ? `Selected · ${selectedKey}`
               : "No date selected"
             : formValue
-              ? `Closes ${formValue.replace("T", " ")} Accra`
+              ? `${summaryLabel} ${formValue.replace("T", " ")} Accra`
               : "Pick a day and time"}
         </p>
-        {mode === "date" && !required && selectedKey && (
+        {!required && (mode === "date" ? selectedKey : formValue) && (
           <button
             type="button"
             className="font-medium text-brand-700 hover:text-brand-800"

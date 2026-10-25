@@ -1,6 +1,6 @@
 # Trigger.dev
 
-Background jobs (batch cutoff, hold expiry, vendor push) run on [Trigger.dev](https://trigger.dev).
+Background jobs (batch open, batch cutoff, hold expiry, vendor push) run on [Trigger.dev](https://trigger.dev).
 
 ## Local
 
@@ -46,7 +46,8 @@ What gets synced (when present):
 - `NEXT_PUBLIC_SITE_URL`
 - `RESEND_API_KEY` (secret)
 - `EMAIL_FROM`
-- `EMAIL_SMTP_HOST` / `EMAIL_SMTP_PORT`
+- `EMAIL_SMTP_HOST` / `EMAIL_SMTP_PORT` / `EMAIL_SMTP_USER`
+- `EMAIL_SMTP_PASS` (secret)
 - `NEXT_PUBLIC_VAPID_PUBLIC_KEY`
 - `VAPID_PRIVATE_KEY` (secret)
 - `VAPID_SUBJECT`

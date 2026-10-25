@@ -85,6 +85,7 @@ export type Database = {
           freight_units_total: number | null
           id: string
           number: number
+          open_run_id: string | null
           opens_at: string
           order_seq: number
           status: Database["public"]["Enums"]["batch_status"]
@@ -105,6 +106,7 @@ export type Database = {
           freight_units_total?: number | null
           id?: string
           number: number
+          open_run_id?: string | null
           opens_at?: string
           order_seq?: number
           status?: Database["public"]["Enums"]["batch_status"]
@@ -125,6 +127,7 @@ export type Database = {
           freight_units_total?: number | null
           id?: string
           number?: number
+          open_run_id?: string | null
           opens_at?: string
           order_seq?: number
           status?: Database["public"]["Enums"]["batch_status"]
@@ -171,6 +174,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      customer_sign_in_codes: {
+        Row: {
+          attempts: number
+          code_hash: string
+          consumed_at: string | null
+          created_at: string
+          email: string
+          expires_at: string
+          id: string
+          requested_ip: string | null
+        }
+        Insert: {
+          attempts?: number
+          code_hash: string
+          consumed_at?: string | null
+          created_at?: string
+          email: string
+          expires_at: string
+          id?: string
+          requested_ip?: string | null
+        }
+        Update: {
+          attempts?: number
+          code_hash?: string
+          consumed_at?: string | null
+          created_at?: string
+          email?: string
+          expires_at?: string
+          id?: string
+          requested_ip?: string | null
+        }
+        Relationships: []
       }
       customers: {
         Row: {

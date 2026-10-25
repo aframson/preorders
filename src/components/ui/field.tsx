@@ -81,3 +81,22 @@ export function Field({
     </div>
   );
 }
+
+/**
+ * For errors that don't belong to one input — "batch not found", a database
+ * failure, a stale form. Field-level errors render at the field itself; this
+ * is the fallback so a non-field failure is never silently dropped.
+ */
+export function FormError({ message }: { message?: string | null }) {
+  if (!message) return null;
+
+  return (
+    <p
+      role="alert"
+      className="flex items-start gap-1.5 rounded-control border border-danger/30 bg-danger-tint px-3 py-2.5 text-sm text-danger"
+    >
+      <AlertCircle className="mt-0.5 size-4 shrink-0" aria-hidden />
+      {message}
+    </p>
+  );
+}

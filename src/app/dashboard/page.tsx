@@ -26,7 +26,7 @@ import {
   type DashboardBatch,
 } from "@/lib/queries/dashboard";
 import { absoluteUrl, dropPath, shareUrl } from "@/lib/site";
-import { BATCH_STATUS, batchTone } from "@/lib/status";
+import { BATCH_STATUS, batchTone, hasScheduledStart } from "@/lib/status";
 import { createClient } from "@/lib/supabase/server";
 import { formatAccraDateTime } from "@/lib/time";
 import {
@@ -235,6 +235,7 @@ function SectionHeading({
 function BatchRow({ batch }: { batch: DashboardBatch }) {
   const totals = batchTotals(batch);
   const closesAt = new Date(batch.closesAt);
+  const scheduledStart = hasScheduledStart(batch);
 
   return (
     <li>
@@ -258,10 +259,11 @@ function BatchRow({ batch }: { batch: DashboardBatch }) {
             </StatusPill>
           </span>
           <span className="mt-0.5 block truncate text-sm text-ink-muted">
-            {batch.status === "scheduled" ? "Opens" : "Closes"}{" "}
-            {formatAccraDateTime(
-              batch.status === "scheduled" ? batch.opensAt : batch.closesAt,
-            )}
+            {batch.status === "scheduled"
+              ? scheduledStart
+                ? `Opens ${formatAccraDateTime(batch.opensAt)}`
+                : "Not open yet"
+              : `Closes ${formatAccraDateTime(batch.closesAt)}`}
           </span>
         </span>
         <span className="hidden shrink-0 text-right sm:block">

@@ -4,13 +4,16 @@ import { useActionState, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { CutoffCalendar } from "@/components/ui/cutoff-calendar";
-import { Field, Select } from "@/components/ui/field";
+import { Field, FormError, Select } from "@/components/ui/field";
 import { FREIGHT_MODES, type FreightMode } from "@/lib/freight";
+import { useSuccessToast } from "@/lib/use-success-toast";
 import { createBatch, updateBatch, type ActionState } from "./actions";
 
 export type BatchFormValues = {
   batchId?: string;
   freightMode: FreightMode;
+  /** Accra-time `datetime-local` value. Blank means "I'll open it myself." */
+  opensAt: string;
   /** Accra-time `datetime-local` value. */
   closesAt: string;
   /** Accra-time `date` value. */
@@ -24,16 +27,21 @@ export function BatchForm({
   dropId,
   initial,
   submitLabel,
+  canScheduleOpen = true,
 }: {
   dropId: string;
   initial: BatchFormValues;
   submitLabel: string;
+  /** False once the batch has already opened — the start time is history by then. */
+  canScheduleOpen?: boolean;
 }) {
   const [state, submit, pending] = useActionState<ActionState, FormData>(
     initial.batchId ? updateBatch : createBatch,
     {},
   );
+  useSuccessToast(state);
   const [mode, setMode] = useState<FreightMode>(initial.freightMode);
+  const [opensAt, setOpensAt] = useState(initial.opensAt);
   const [closesAt, setClosesAt] = useState(initial.closesAt);
   const [expectedDeliveryAt, setExpectedDeliveryAt] = useState(
     initial.expectedDeliveryAt,
@@ -46,10 +54,31 @@ export function BatchForm({
         <input type="hidden" name="batchId" value={initial.batchId} />
       )}
 
+      <FormError message={state.error} />
+
+      {canScheduleOpen && (
+        <Field
+          label="Orders open"
+          htmlFor="opensAt"
+          hint="Optional. Leave blank to open it yourself when you're ready — otherwise this batch opens for orders on its own. Ghana time."
+          error={state.fieldErrors?.opensAt}
+        >
+          <CutoffCalendar
+            id="opensAt"
+            name="opensAt"
+            mode="datetime"
+            value={opensAt}
+            onChange={setOpensAt}
+            summaryLabel="Opens"
+          />
+        </Field>
+      )}
+
       <Field
         label="How is this batch shipping?"
         htmlFor="freightMode"
         hint="This decides whether shipping is split by weight or by volume."
+        error={state.fieldErrors?.freightMode}
       >
         <Select
           id="freightMode"
@@ -66,7 +95,7 @@ export function BatchForm({
         label="Orders close"
         htmlFor="closesAt"
         hint="Ghana time. We close the batch for you at this moment."
-        error={state.error}
+        error={state.fieldErrors?.closesAt}
       >
         <CutoffCalendar
           id="closesAt"
@@ -82,6 +111,7 @@ export function BatchForm({
         label="Expected in Accra"
         htmlFor="expectedDeliveryAt"
         hint="Optional, shown to customers as a rough window like 'late September'."
+        error={state.fieldErrors?.expectedDeliveryAt}
       >
         <CutoffCalendar
           id="expectedDeliveryAt"
@@ -96,6 +126,7 @@ export function BatchForm({
         label={`Estimated shipping rate (${FREIGHT_MODES[mode].rateLabel})`}
         htmlFor="freightRateEstimate"
         hint="Your forwarder's current rate. Customers see this as an estimate at checkout, and the real bill is charged on arrival."
+        error={state.fieldErrors?.freightRateEstimate}
       >
         <div className="flex items-center overflow-hidden rounded-control border border-border bg-surface focus-within:border-brand-500">
           <span className="shrink-0 border-r border-border bg-surface-muted px-3.5 py-4 text-sm text-ink-muted sm:py-3">
@@ -136,16 +167,9 @@ export function BatchForm({
         </span>
       </label>
 
-      <div className="flex items-center gap-3">
-        <Button type="submit" size="lg" loading={pending}>
-          {submitLabel}
-        </Button>
-        {state.message && (
-          <span role="status" className="text-sm text-open">
-            {state.message}
-          </span>
-        )}
-      </div>
+      <Button type="submit" size="lg" loading={pending}>
+        {submitLabel}
+      </Button>
     </form>
   );
 }

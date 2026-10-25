@@ -182,3 +182,19 @@ export function isClosingSoon(closesAt: Date): boolean {
   const remaining = closesAt.getTime() - Date.now();
   return remaining > 0 && remaining <= CLOSING_SOON_MS;
 }
+
+/**
+ * A scheduled batch's `opens_at` defaults to the moment it was created, so it
+ * only describes a real plan once a vendor has deliberately pushed it into
+ * the future (see "Orders open" on the batch form). Every surface that shows
+ * a scheduled batch's start date checks this first, rather than printing a
+ * meaningless past timestamp for a batch nobody has scheduled.
+ */
+export function hasScheduledStart(batch: {
+  status: BatchStatus;
+  opensAt: string | Date;
+}): boolean {
+  const opensAt =
+    typeof batch.opensAt === "string" ? new Date(batch.opensAt) : batch.opensAt;
+  return batch.status === "scheduled" && opensAt.getTime() > Date.now();
+}

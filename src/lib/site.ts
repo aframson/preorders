@@ -79,9 +79,9 @@ export function customerPortalPath(portalToken: string): string {
   return `/c/${portalToken}`;
 }
 
-/** Find / recover orders for a vendor shop (`/[vendor]/orders`). */
-export function vendorOrdersPath(vendorSlug: string): string {
-  return `/${vendorSlug}/orders`;
+/** A customer's orders from every shop: signed in by phone, or this phone's orders. */
+export function myOrdersPath(): string {
+  return "/orders";
 }
 
 /**

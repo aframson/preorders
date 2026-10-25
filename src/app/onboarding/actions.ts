@@ -5,6 +5,7 @@ import { z } from "zod";
 
 import { getVendor, requireUser, requireVendor } from "@/lib/auth";
 import { PLATFORM_FEE_PERCENT } from "@/lib/fees";
+import { fieldErrorsFromZod } from "@/lib/form-errors";
 import {
   createSubaccount,
   isPaystackConfigured,
@@ -28,7 +29,11 @@ import {
   resetVendorApproval,
 } from "@/lib/vendor-approval";
 
-export type ActionState = { error?: string | null; message?: string | null };
+export type ActionState = {
+  error?: string | null;
+  message?: string | null;
+  fieldErrors?: Record<string, string>;
+};
 
 // Step 2 - business ----------------------------------------------------------
 
@@ -61,13 +66,21 @@ export async function saveBusiness(
   });
 
   if (!parsed.success) {
-    return { error: parsed.error.issues[0].message };
+    return {
+      fieldErrors: fieldErrorsFromZod(parsed.error, [
+        "businessName",
+        "slug",
+        "whatsappNumber",
+      ] as const),
+    };
   }
 
   const { businessName, slug, whatsappNumber } = parsed.data;
 
   if (isReservedSlug(slug)) {
-    return { error: `"${slug}" is reserved. Try another link name.` };
+    return {
+      fieldErrors: { slug: `"${slug}" is reserved. Try another link name.` },
+    };
   }
 
   const existing = await getVendor();
@@ -88,7 +101,7 @@ export async function saveBusiness(
         code: error.code,
         message: error.message,
       });
-      return { error: describeSlugError(error.message, slug) };
+      return slugErrorState(error.message, slug);
     }
 
     redirect("/onboarding/payout");
@@ -116,7 +129,7 @@ export async function saveBusiness(
       details: vendorError?.details,
       hint: vendorError?.hint,
     });
-    return { error: describeSlugError(vendorError?.message ?? "", slug) };
+    return slugErrorState(vendorError?.message ?? "", slug);
   }
 
   const { error: memberError } = await admin
@@ -148,15 +161,25 @@ export async function saveBusiness(
   redirect("/onboarding/payout");
 }
 
-function describeSlugError(message: string, slug: string): string {
+/**
+ * Only a duplicate slug is the vendor's to fix — everything else here is a
+ * server/config problem, so it has to surface as a general error rather than
+ * being pinned to the link field just because that's the write that failed.
+ */
+function slugErrorState(message: string, slug: string): ActionState {
   const lower = message.toLowerCase();
 
   if (lower.includes("vendors_slug_key") || lower.includes("duplicate")) {
-    return `"${slug}" is already taken. Try another link name.`;
+    return {
+      fieldErrors: { slug: `"${slug}" is already taken. Try another link name.` },
+    };
   }
 
   if (lower.includes("permission denied") || lower.includes("row-level security")) {
-    return "We couldn't save your business details right now. Please try again in a moment.";
+    return {
+      error:
+        "We couldn't save your business details right now. Please try again in a moment.",
+    };
   }
 
   if (
@@ -165,15 +188,20 @@ function describeSlugError(message: string, slug: string): string {
     lower.includes("unauthorized") ||
     lower.includes("401")
   ) {
-    return "Server database keys look wrong. Check SUPABASE_SERVICE_ROLE_KEY and restart the app.";
+    return {
+      error:
+        "Server database keys look wrong. Check SUPABASE_SERVICE_ROLE_KEY and restart the app.",
+    };
   }
 
   if (!message.trim()) {
-    return "Could not save your business details. Try again.";
+    return { error: "Could not save your business details. Try again." };
   }
 
   // Never surface raw database wording to vendors.
-  return "Could not save your business details. Check your details and try again.";
+  return {
+    error: "Could not save your business details. Check your details and try again.",
+  };
 }
 
 const SLUG_PATTERN = /^[a-z0-9][a-z0-9-]{1,38}[a-z0-9]$/;
@@ -493,16 +521,24 @@ export async function createFirstDrop(
     closesAt: formData.get("closesAt"),
   });
 
-  if (!parsed.success) return { error: parsed.error.issues[0].message };
+  if (!parsed.success) {
+    return {
+      fieldErrors: fieldErrorsFromZod(parsed.error, [
+        "title",
+        "freightMode",
+        "closesAt",
+      ] as const),
+    };
+  }
 
   // The picker shows Accra time, so the value has to be read back as Accra
   // time rather than as whatever zone the server happens to run in.
   const closesAt = fromAccraInputValue(parsed.data.closesAt);
   if (Number.isNaN(closesAt.getTime())) {
-    return { error: "Choose when orders close" };
+    return { fieldErrors: { closesAt: "Choose when orders close" } };
   }
   if (closesAt.getTime() <= Date.now()) {
-    return { error: "The cutoff has to be in the future" };
+    return { fieldErrors: { closesAt: "The cutoff has to be in the future" } };
   }
 
   const supabase = await createClient();

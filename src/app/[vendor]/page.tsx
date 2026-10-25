@@ -2,11 +2,13 @@ import type { Metadata } from "next";
 import { MessageCircle } from "lucide-react";
 import { notFound } from "next/navigation";
 
+import { OwnerPreviewBanner } from "@/components/public/owner-preview-banner";
 import { SearchableVendorDrops } from "@/components/public/searchable-vendor-drops";
 import { ShopHeaderActions } from "@/components/public/shop-header-actions";
 import { VendorHeader } from "@/components/public/vendor-header";
 import { StarRow } from "@/components/ui/star-row";
 import { getVendor } from "@/lib/auth";
+import { getCustomerSession } from "@/lib/customer-auth";
 import { getPublicVendor } from "@/lib/queries/public-vendor";
 import { vendorPath, whatsappChatLink } from "@/lib/site";
 
@@ -48,17 +50,20 @@ export default async function PublicVendorPage({
 
   const { vendor, drops, recentReviews } = data;
   const sessionVendor = await getVendor();
+  const sessionCustomer = await getCustomerSession();
+  const isOwnerPreview = sessionVendor?.id === vendor.id;
 
   return (
     <div className="flex min-h-dvh flex-col">
+      {isOwnerPreview && <OwnerPreviewBanner />}
       <VendorHeader
         businessName={vendor.businessName}
         logoPath={vendor.logoPath}
         batchesDelivered={vendor.batchesDelivered}
         actions={
           <ShopHeaderActions
-            vendorSlug={vendor.slug}
             dashboardHref={sessionVendor ? "/dashboard" : null}
+            customerEmail={sessionCustomer?.email ?? null}
           />
         }
       />
