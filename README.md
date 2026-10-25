@@ -35,3 +35,4 @@ Full notes: [docs/trigger.md](docs/trigger.md).
 4. Dashboard → More → Enable push alerts (install to home screen for best results).
 
 Vendors get notified when a buyer **pays** or **adds to bag**.
+# ultpreorders
